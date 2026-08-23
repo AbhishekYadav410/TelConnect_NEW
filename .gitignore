@@ -1,0 +1,25 @@
+# environments & dependencies
+backend/.venv/
+frontend/node_modules/
+frontend/dist/
+
+# secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+*.env
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/data/secret.key
+
+# python artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# seeded demo data IS committed on purpose:
+#   backend/data/tci.db  and  backend/data/sample_complaints.csv
+# sqlite side files are not
+backend/data/*.db-wal
+backend/data/*.db-shm

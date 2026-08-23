@@ -1,0 +1,72 @@
+{
+  "accuracy": 0.9231,
+  "precision_macro": 0.9758,
+  "recall_macro": 0.972,
+  "macro_f1": 0.972,
+  "hamming_loss": 0.0212,
+  "train_samples": 312,
+  "test_samples": 104,
+  "categories": [
+    "network",
+    "billing",
+    "service",
+    "device",
+    "other"
+  ],
+  "classification_report": {
+    "network": {
+      "precision": 1.0,
+      "recall": 0.86,
+      "f1-score": 0.9247311827956989,
+      "support": 50.0
+    },
+    "billing": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 31.0
+    },
+    "service": {
+      "precision": 0.8787878787878788,
+      "recall": 1.0,
+      "f1-score": 0.9354838709677419,
+      "support": 29.0
+    },
+    "device": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 16.0
+    },
+    "other": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 10.0
+    },
+    "micro avg": {
+      "precision": 0.9699248120300752,
+      "recall": 0.9485294117647058,
+      "f1-score": 0.9591078066914498,
+      "support": 136.0
+    },
+    "macro avg": {
+      "precision": 0.9757575757575758,
+      "recall": 0.9719999999999999,
+      "f1-score": 0.9720430107526882,
+      "support": 136.0
+    },
+    "weighted avg": {
+      "precision": 0.9741532976827095,
+      "recall": 0.9485294117647058,
+      "f1-score": 0.9585705249841873,
+      "support": 136.0
+    },
+    "samples avg": {
+      "precision": 0.9278846153846154,
+      "recall": 0.9326923076923077,
+      "f1-score": 0.9294871794871795,
+      "support": 136.0
+    }
+  }
+}
