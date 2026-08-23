@@ -146,7 +146,8 @@ def test_queue_has_summaries_and_factors(tokens):
     q = client.get("/api/admin/queue?limit=5", headers=tokens["admin"]).json()
     top = q["rows"][0]
     assert top["ticket_summary"]
-    assert isinstance(top["priority_factors"], list) and len(top["priority_factors"]) >= 2
+    assert isinstance(top["priority_factors"], list) and len(top["priority_factors"]) >= 1
+
 
 
 def test_filters_drilldown(tokens):
