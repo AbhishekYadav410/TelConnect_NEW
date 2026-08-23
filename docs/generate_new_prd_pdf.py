@@ -1,4 +1,4 @@
-"""Generate NEW_PRD.pdf matching the professional 23-page template structure and styling."""
+"""Generate NEW_PRD.pdf matching the exact 23-page PDF template structure and styling."""
 import os
 import sys
 from reportlab.lib.pagesizes import letter
@@ -51,8 +51,8 @@ class NumberedCanvas(canvas.Canvas):
         self.line(54, 45, 558, 45)
         self.setFont("Helvetica", 8)
         self.setFillColor(colors.HexColor("#64748b"))
-        self.drawString(54, 32, "PRD v7.0 — Autonomous Multi-Task Agent & Multilingual Intelligence")
-        self.drawRightString(558, 32, f"PRD v7.0 | Page {self._pageNumber} of {page_count}")
+        self.drawString(54, 32, "PRD v10.0 — Admin-Oriented Multi-Task Agent & Text-Only Intelligence")
+        self.drawRightString(558, 32, f"PRD v10.0 | Page {self._pageNumber} of {page_count}")
         self.restoreState()
 
 
@@ -188,226 +188,201 @@ def build_new_prd_pdf(output_path: str):
     # ================= PAGE 1 =================
     story.append(Paragraph("PRODUCT REQUIREMENTS DOCUMENT", ParagraphStyle('SuperTitle', fontName='Helvetica-Bold', fontSize=8.5, textColor=colors.HexColor("#64748b"), spaceAfter=3)))
     story.append(Paragraph("Telecom Complaint Intelligence<br/>& Automated Resolution Assistant", title_style))
-    story.append(Paragraph("Professional, customer-first product specification<br/><b>Cognizant Hackathon • Use Case 13</b>", subtitle_style))
+    story.append(Paragraph("Professional, admin-oriented product specification<br/><b>Cognizant Hackathon • Use Case 13</b>", subtitle_style))
     story.append(HRFlowable(width="100%", thickness=1.5, color=primary_color, spaceBefore=2, spaceAfter=8))
 
     spec_data = [
         [Paragraph("Document", table_header_style), Paragraph("Specification", table_header_style)],
-        [Paragraph("Version", table_cell_bold), Paragraph("7.0 — Autonomous Multi-Task Agent & Multilingual Intelligence PRD", table_cell_style)],
+        [Paragraph("Version", table_cell_bold), Paragraph("10.0 — Admin-Oriented Multi-Task Agent & Text-Only Intelligence PRD", table_cell_style)],
         [Paragraph("Product Type", table_cell_bold), Paragraph("AI-powered telecom complaint intelligence and automated resolution platform", table_cell_style)],
-        [Paragraph("Primary User", table_cell_bold), Paragraph("Telecom customer", table_cell_style)],
-        [Paragraph("Operational User", table_cell_bold), Paragraph("Support / Network / Operations / Admin teams", table_cell_style)],
-        [Paragraph("Agent Orchestration", table_cell_bold), Paragraph("LangGraph Multi-Task StateGraph (6-node customer agent & 4-node admin agent)", table_cell_style)],
-        [Paragraph("Multilingual Engine", table_cell_bold), Paragraph("Hugging Face DistilBERT (multilingual-cased) + Groq Zero-Shot Neural Translation + Rule Fallback", table_cell_style)],
-        [Paragraph("Primary AI Provider", table_cell_bold), Paragraph("Groq API — Free Plan (Llama-3 models + Whisper voice STT) with complete offline fallback", table_cell_style)],
-        [Paragraph("Voice Stack", table_cell_bold), Paragraph("Groq Whisper (Multilingual Voice STT) + Browser Web Speech API (Bilingual TTS Readout)", table_cell_style)],
-        [Paragraph("Core Data Store", table_cell_bold), Paragraph("SQLite (tci.db with WAL mode, foreign keys, and immutable audit logs)", table_cell_style)],
+        [Paragraph("Primary User", table_cell_bold), Paragraph("Support / Operations Admin teams", table_cell_style)],
+        [Paragraph("Secondary User", table_cell_bold), Paragraph("Telecom customers", table_cell_style)],
+        [Paragraph("Admin Assistant UI", table_cell_bold), Paragraph("Admin Operations Dashboard + Admin AI Assistant", table_cell_style)],
+        [Paragraph("Agent Orchestration", table_cell_bold), Paragraph("LangGraph Multi-Task StateGraph (customer workflow + admin operations agent)", table_cell_style)],
+        [Paragraph("Multilingual Engine", table_cell_bold), Paragraph("Hugging Face DistilBERT (multilingual-cased) + Groq translation + rule fallback", table_cell_style)],
+        [Paragraph("Primary AI Provider", table_cell_bold), Paragraph("Groq API (Llama models) with deterministic offline fallbacks", table_cell_style)],
+        [Paragraph("Customer Interaction", table_cell_bold), Paragraph("Text-based conversational assistant", table_cell_style)],
+        [Paragraph("Core Data Store", table_cell_bold), Paragraph("SQLite (tci.db with WAL mode, foreign keys, immutable audit logs)", table_cell_style)],
         [Paragraph("Knowledge Store", table_cell_bold), Paragraph("ChromaDB persistent vector store + Sentence Transformers (all-MiniLM-L6-v2)", table_cell_style)],
-        [Paragraph("Geolocation Engine", table_cell_bold), Paragraph("Geoapify Geocoding API (in-memory caching and India coordinate boundary validation)", table_cell_style)],
+        [Paragraph("Geolocation Engine", table_cell_bold), Paragraph("Geoapify Geocoding API with caching and India boundary validation", table_cell_style)],
         [Paragraph("Core Backend", table_cell_bold), Paragraph("Python + FastAPI + Uvicorn", table_cell_style)],
-        [Paragraph("UI", table_cell_bold), Paragraph("Customer Assistant (40/60 Split) + Admin Operations Dashboard + Theme Engine (Dark/Light)", table_cell_style)],
+        [Paragraph("UI", table_cell_bold), Paragraph("Admin Operations Dashboard + Admin AI Assistant + Customer Assistant (40/60 Split) + Theme Engine (Dark/Light)", table_cell_style)],
     ]
     story.append(make_table(spec_data, [110, 394], header_color=primary_color))
     story.append(Spacer(1, 8))
 
+    story.append(Paragraph("Product Vision", h2_style))
     vision_text = (
-        "<b>Product vision:</b> Turn telecom complaints from isolated support tickets into a closed-loop "
-        "intelligence system that can understand the customer in any language, verify the issue with live line diagnostics, "
-        "resolve eligible problems using grounded SOPs, track unresolved cases transparently, detect mass incidents in real time, "
-        "and proactively prevent repeated complaints."
+        "Give telecom operations teams a single intelligence and control plane to monitor complaints, manage tickets, "
+        "investigate incidents, use AI-assisted recommendations, detect service-wide patterns, approve proactive actions, "
+        "and verify that customer-facing resolution outcomes are achieved.<br/><br/>"
+        "The customer assistant remains the connected service channel, while the product is positioned around the admin control plane: "
+        "operational visibility, queue management, incident intelligence, auditability and AI decision support."
     )
-    t_callout = Table([[Paragraph(vision_text, callout_style)]], colWidths=[504])
-    t_callout.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#f0fdfa")),
-        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#0d9488")),
-        ('TOPPADDING', (0, 0), (-1, -1), 5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-    ]))
-    story.append(t_callout)
-    story.append(Spacer(1, 6))
-    story.append(Paragraph(
-        "This PRD preserves and elevates all capabilities from the original Use Case 13 — complaint classification, "
-        "sentiment, escalation prediction, RAG, root-cause analysis, heatmaps, spike detection and proactive notification — "
-        "while structuring them around the customer's complaint-to-resolution journey and modern multi-task agent workflows.",
-        body_style
-    ))
+    story.append(Paragraph(vision_text, body_style))
     story.append(PageBreak())
 
     # ================= PAGE 2 =================
     story.append(Paragraph("1. Product Overview", h1_style))
     story.append(Paragraph(
-        "The Telecom Complaint Intelligence & Automated Resolution Assistant is a customer-facing AI service backed by an "
-        "operational support and analytics platform. It accepts complaints through a conversational assistant via text or voice, "
-        "classifies and prioritizes them, checks for known incidents, retrieves approved troubleshooting guidance, creates and "
-        "tracks tickets when required, and verifies whether the customer is actually satisfied with the resolution.", body_style))
+        "TelConnect is an admin-oriented telecom complaint intelligence and resolution platform. The Admin Dashboard is the primary "
+        "operational control plane used to manage the complaint lifecycle, investigate patterns, monitor service issues, update ticket states, "
+        "manage incidents, evaluate AI recommendations and query operational intelligence.", body_style))
     story.append(Paragraph(
-        "The Admin Dashboard is the operations control plane used to manage the complaint lifecycle, investigate patterns, "
-        "monitor service issues, update ticket states, manage incidents, evaluate AI recommendations, and query operational intelligence.", body_style))
+        "The customer assistant is the connected text-based service channel: it captures complaints, diagnostics and customer confirmation "
+        "while feeding authoritative operational data into the admin workflow.", body_style))
     
     story.append(Paragraph("1.1 Product Principles", h2_style))
-    story.append(Paragraph("• <b>Customer first:</b> The primary workflow begins with the customer's problem and ends only when the issue is resolved or properly escalated.", bullet_style))
-    story.append(Paragraph("• <b>One source of truth:</b> Customer assistant and admin dashboard read/write through the same backend and SQLite database (<code>tci.db</code>).", bullet_style))
-    story.append(Paragraph("• <b>AI with controlled actions:</b> The LLM interprets and explains; backend APIs perform privileged operations.", bullet_style))
-    story.append(Paragraph("• <b>Dynamic by design:</b> Complaints can be created by customers, admins or authorized data feeds; the system is not dependent on static CSV data.", bullet_style))
-    story.append(Paragraph("• <b>Closed loop:</b> A proposed resolution requires customer confirmation before an eligible complaint is closed.", bullet_style))
-    story.append(Paragraph("• <b>Explainable intelligence:</b> Classification, priority, escalation and root-cause outputs expose useful evidence and contributing factors.", bullet_style))
-    story.append(Paragraph("• <b>Zero-Cost & Offline Resilient:</b> Runs 100% on free-tier APIs with immediate deterministic offline fallbacks for zero API key operation.", bullet_style))
+    story.append(Paragraph("• <b>Admin first:</b> The primary workflow starts with operational visibility and ends with a controlled, auditable action or verified outcome.", bullet_style))
+    story.append(Paragraph("• <b>Operational control:</b> Admins manage queues, tickets, assignments, incidents, alerts, notifications and resolution actions from one dashboard.", bullet_style))
+    story.append(Paragraph("• <b>AI-assisted decisions:</b> The Admin AI Assistant provides evidence, SOP knowledge, live database context and explainable recommendations; privileged actions remain backend-controlled.", bullet_style))
+    story.append(Paragraph("• <b>Customer outcome:</b> Admin actions are measured by whether complaints are resolved, tracked and confirmed by the customer.", bullet_style))
+    story.append(Paragraph("• <b>One source of truth:</b> Admin dashboard and customer assistant use the same backend and SQLite operational database.", bullet_style))
+    story.append(Paragraph("• <b>Dynamic by design:</b> Runtime complaints, assignments and incidents are database-driven; seed CSV data is not the live source of truth.", bullet_style))
+    story.append(Paragraph("• <b>Closed loop:</b> Resolution is not final until the customer confirms it; rejected fixes reopen or escalate.", bullet_style))
+    story.append(Paragraph("• <b>Explainable and auditable:</b> Priority, escalation, root-cause and AI recommendations expose evidence, while privileged actions are logged.", bullet_style))
+    story.append(Paragraph("• <b>Zero-cost and offline resilient:</b> Core ticket/status operations remain usable with deterministic fallbacks when external AI services are unavailable.", bullet_style))
 
     story.append(Paragraph("1.2 Problem Statement", h2_style))
     story.append(Paragraph(
-        "Telecom operators receive large volumes of complaints related to network issues, call drops, broadband failures, "
-        "billing disputes and service requests. Manual triage is slow, customers often lack visibility into what happens after raising "
-        "a complaint, and support teams may discover mass outages only after complaint volumes increase.", body_style))
-    story.append(Paragraph(
-        "The product must therefore solve two connected problems: <b>(1) help individual customers reach a verified "
-        "resolution faster</b>, and <b>(2) convert complaint data into operational intelligence</b> that helps telecom teams detect, "
-        "investigate and prevent recurring or mass complaints.", body_style))
+        "Telecom operators receive large complaint volumes across network, broadband, billing and service issues. Manual triage, "
+        "fragmented ticket handling and delayed outage recognition make it difficult for operations teams to understand what is happening, "
+        "which customers are affected, what should be done next and whether the customer was actually helped.", body_style))
     story.append(PageBreak())
 
     # ================= PAGE 3 =================
     story.append(Paragraph("2. Objectives", h1_style))
     obj_data = [
-        [Paragraph("Objective", table_header_style), Paragraph("Expected Outcome", table_header_style)],
-        [Paragraph("Automate complaint understanding", table_cell_bold), Paragraph("Classify intent/category, extract key entities, detect sentiment, urgency and escalation risk.", table_cell_style)],
-        [Paragraph("Instant line & speed diagnostics", table_cell_bold), Paragraph("Provide on-demand telemetry tests (speed, latency, jitter, packet loss) directly inside chat.", table_cell_style)],
-        [Paragraph("Improve first-contact resolution", table_cell_bold), Paragraph("Use incident checks, ChromaDB RAG and safe troubleshooting workflows before escalating to human support.", table_cell_style)],
-        [Paragraph("Create a complete complaint lifecycle", table_cell_bold), Paragraph("Support verification, ticket creation, assignment, status updates, resolution, confirmation, reopening and escalation.", table_cell_style)],
-        [Paragraph("Give customers live visibility", table_cell_bold), Paragraph("Allow authenticated customers to check ticket status and status history from the assistant in natural language.", table_cell_style)],
-        [Paragraph("Reduce duplicate complaints", table_cell_bold), Paragraph("Match new complaints against active incidents and link reports without creating duplicate tickets.", table_cell_style)],
-        [Paragraph("Detect mass service problems", table_cell_bold), Paragraph("Use complaint spikes, location and service patterns against rolling baselines to create incident alerts.", table_cell_style)],
-        [Paragraph("Support root-cause investigation", table_cell_bold), Paragraph("Combine structured complaint patterns with historical/knowledge evidence to generate explainable hypotheses.", table_cell_style)],
-        [Paragraph("Proactively inform customers", table_cell_bold), Paragraph("Notify affected customers about confirmed/approved incidents and meaningful ticket events.", table_cell_style)],
-        [Paragraph("Operations AI decision support", table_cell_bold), Paragraph("Provide an autonomous LangGraph agent for NOC admins to query critical issues and SOPs.", table_cell_style)],
-        [Paragraph("Improve operational efficiency", table_cell_bold), Paragraph("Provide an admin dashboard for queue management, heatmap investigation, analytics and resolution actions.", table_cell_style)],
+        [Paragraph("Admin Objective", table_header_style), Paragraph("Expected Operational Outcome", table_header_style)],
+        [Paragraph("Operational overview", table_cell_bold), Paragraph("Monitor complaint volume, open tickets, priorities, SLA risk, incidents and trends from one control plane.", table_cell_style)],
+        [Paragraph("Queue & ticket efficiency", table_cell_bold), Paragraph("Search, filter, assign, update, escalate and resolve complaints with full status history.", table_cell_style)],
+        [Paragraph("Incident intelligence", table_cell_bold), Paragraph("Detect spikes, link complaints to incidents and investigate service-wide impact.", table_cell_style)],
+        [Paragraph("AI decision support", table_cell_bold), Paragraph("Use the Admin AI Assistant with live DB snapshots, ChromaDB SOPs and explainable recommendations.", table_cell_style)],
+        [Paragraph("Root-cause investigation", table_cell_bold), Paragraph("Combine complaint patterns, geography, history and knowledge evidence into actionable hypotheses.", table_cell_style)],
+        [Paragraph("Proactive operations", table_cell_bold), Paragraph("Review and approve customer notifications for confirmed incidents and meaningful ticket events.", table_cell_style)],
+        [Paragraph("Audit & governance", table_cell_bold), Paragraph("Keep privileged actions, assignments, status changes and notification decisions traceable.", table_cell_style)],
+        [Paragraph("Customer resolution outcome", table_cell_bold), Paragraph("Ensure the operational workflow ultimately produces verified customer resolution or proper escalation.", table_cell_style)],
+        [Paragraph("Customer-facing assistance", table_cell_bold), Paragraph("Provide text chat, diagnostics, troubleshooting, ticket tracking and confirmation as the service channel.", table_cell_style)],
     ]
     story.append(make_table(obj_data, [130, 374]))
     story.append(Spacer(1, 6))
 
     story.append(Paragraph("2.1 Success Criteria", h2_style))
-    story.append(Paragraph("• Customer can report a complaint or run speed diagnostics without navigating complex forms.", bullet_style))
-    story.append(Paragraph("• Every valid complaint receives a unique ticket ID (<code>TCK-xxx</code>) and persistent database record.", bullet_style))
-    story.append(Paragraph("• Customer can retrieve the current ticket status at any time in English, Hindi, or Hinglish.", bullet_style))
-    story.append(Paragraph("• AI-assisted resolution never silently closes a complaint.", bullet_style))
-    story.append(Paragraph("• A customer can reject a resolution and reopen/escalate the complaint.", bullet_style))
-    story.append(Paragraph("• Admin status changes are reflected in the customer experience in real time.", bullet_style))
-    story.append(Paragraph("• Known active incidents can be linked to new complaints to reduce duplicate tickets.", bullet_style))
-    story.append(Paragraph("• Admin can see complaint volume, priority, category, sentiment, escalation risk, geographic spikes and incident information.", bullet_style))
+    story.append(Paragraph("• Admin can see complaint volume, priority, category, sentiment, escalation risk, geographic spikes, incidents and SLA information.", bullet_style))
+    story.append(Paragraph("• Admin can assign, update, escalate and resolve tickets while preserving immutable status history.", bullet_style))
+    story.append(Paragraph("• Admin can investigate a spike and obtain evidence-backed root-cause signals.", bullet_style))
+    story.append(Paragraph("• Admin can use the Operations AI Assistant for complex operational queries without unrestricted database access.", bullet_style))
+    story.append(Paragraph("• Customer outcome: every valid complaint has a persistent ticket record and can be confirmed, reopened or escalated.", bullet_style))
+    story.append(Paragraph("• Resilience: ticket and status operations remain usable when Groq is unavailable.", bullet_style))
 
     story.append(Paragraph("2.2 Scope Boundaries", h2_style))
-    story.append(Paragraph("• MVP focuses on complaint intelligence and resolution orchestration; it does not directly control telecom network equipment.", bullet_style))
+    story.append(Paragraph("• MVP focuses on complaint intelligence, operational orchestration and resolution support; it does not directly control telecom network equipment.", bullet_style))
     story.append(Paragraph("• Real OSS/BSS integration is a future integration point; the hackathon uses simulated telemetry APIs and controlled data feeds.", bullet_style))
-    story.append(Paragraph("• External SMS/push delivery is optional for MVP; in-app notifications are sufficient to demonstrate the workflow.", bullet_style))
-    story.append(Paragraph("• The platform uses the supplied complaint dataset as seed data but does not treat the CSV as the live operational database.", bullet_style))
+    story.append(Paragraph("• External SMS/push delivery is optional for MVP; in-app notifications demonstrate the workflow.", bullet_style))
+    story.append(Paragraph("• The supplied complaint dataset is seed/demo data, not the live operational database.", bullet_style))
     story.append(PageBreak())
 
     # ================= PAGE 4 =================
     story.append(Paragraph("3. Users & Roles", h1_style))
     roles_data = [
         [Paragraph("Role", table_header_style), Paragraph("Needs", table_header_style), Paragraph("Key Capabilities", table_header_style)],
-        [Paragraph("Customer", table_cell_bold), Paragraph("Fast help, line speed test, clear status, proof that complaint was resolved.", table_cell_style), Paragraph("Chat assistant, voice STT/TTS, line diagnostics, ticket creation, troubleshooting, ticket tracking, confirmation, reopen, escalation, notifications.", table_cell_style)],
-        [Paragraph("Support Admin", table_cell_bold), Paragraph("Efficient queue and resolution management.", table_cell_style), Paragraph("Ticket queue, assignment, priority, status updates, notes, resolution actions, SLA monitoring, escalation.", table_cell_style)],
-        [Paragraph("Network Operations", table_cell_bold), Paragraph("Detect and investigate service-wide problems.", table_cell_style), Paragraph("Leaflet heatmap, complaint spikes, incident management, root-cause investigation, affected-customer analysis, broadcast approvals.", table_cell_style)],
-        [Paragraph("Operations AI User", table_cell_bold), Paragraph("Instant decision support and NOC briefings.", table_cell_style), Paragraph("Admin AI Assistant, prompt chips, live database snapshots, ChromaDB SOP synthesis, classification explanations.", table_cell_style)],
-        [Paragraph("System / AI", table_cell_bold), Paragraph("Automate classification, scoring and decision support.", table_cell_style), Paragraph("LangGraph multi-task agents, ML scoring, spike detection, RAG retrieval, response generation, audit logging.", table_cell_style)],
+        [Paragraph("Support Admin", table_cell_bold), Paragraph("Operational control and fast resolution management.", table_cell_style), Paragraph("Queue, assignment, priority, status, notes, resolution actions, SLA monitoring, escalation, audit.", table_cell_style)],
+        [Paragraph("Network Operations", table_cell_bold), Paragraph("Detect and investigate service-wide problems.", table_cell_style), Paragraph("Heatmap, spikes, incident management, root-cause investigation, affected-customer analysis, broadcast approvals.", table_cell_style)],
+        [Paragraph("Operations AI User", table_cell_bold), Paragraph("Decision support for NOC/admin workflows.", table_cell_style), Paragraph("Admin AI Assistant, prompt chips, live DB snapshots, ChromaDB SOP synthesis, classification explanations.", table_cell_style)],
+        [Paragraph("Customer", table_cell_bold), Paragraph("Fast help and transparent resolution status.", table_cell_style), Paragraph("Text chat assistant, diagnostics, troubleshooting, ticket tracking, confirmation, reopen and escalation.", table_cell_style)],
+        [Paragraph("System / AI", table_cell_bold), Paragraph("Automated intelligence and controlled decision support.", table_cell_style), Paragraph("LangGraph agents, ML scoring, spike detection, RAG retrieval, response generation, audit logging.", table_cell_style)],
     ]
     story.append(make_table(roles_data, [90, 140, 274]))
     story.append(Spacer(1, 6))
 
     story.append(Paragraph("3.1 Access Control", h2_style))
-    story.append(Paragraph("• Customers can access only their own profile, conversations, complaints, notifications and feedback.", bullet_style))
-    story.append(Paragraph("• Admins can access operational complaint and incident data according to role.", bullet_style))
-    story.append(Paragraph("• AI services do not receive unrestricted database access; they call authorized backend functions.", bullet_style))
-    story.append(Paragraph("• All privileged actions are recorded in an audit log.", bullet_style))
+    story.append(Paragraph("• Admins access operational complaint and incident data according to role.", bullet_style))
+    story.append(Paragraph("• Customers access only their own profile, conversations, complaints, notifications and feedback.", bullet_style))
+    story.append(Paragraph("• AI services never receive unrestricted database access; they call authorized backend functions.", bullet_style))
+    story.append(Paragraph("• All privileged actions are recorded in the audit log.", bullet_style))
+    story.append(Paragraph("• Admin AI recommendations remain subject to backend authorization and operational approval where required.", bullet_style))
     story.append(PageBreak())
 
     # ================= PAGE 5 =================
-    story.append(Paragraph("4. Customer Journey", h1_style))
-    story.append(Paragraph("The customer journey is the central workflow of the product.", body_style))
-    journey_data = [
-        [Paragraph("Step", table_header_style), Paragraph("Customer Experience", table_header_style), Paragraph("System Behaviour", table_header_style)],
-        [Paragraph("1. Start", table_cell_bold), Paragraph("Customer describes issue naturally or runs speed test.", table_cell_style), Paragraph("DistilBERT normalizes text; intent router identifies query type.", table_cell_style)],
-        [Paragraph("2. Verify", table_cell_bold), Paragraph("Customer confirms service/account/issue details.", table_cell_style), Paragraph("Authentication + required field validation.", table_cell_style)],
-        [Paragraph("3. Diagnose", table_cell_bold), Paragraph("Assistant checks known incident and retrieves relevant guidance.", table_cell_style), Paragraph("Incident engine + ChromaDB RAG + resolution rules + line diagnostic.", table_cell_style)],
-        [Paragraph("4. Resolve", table_cell_bold), Paragraph("Customer follows safe troubleshooting steps if eligible.", table_cell_style), Paragraph("Resolution attempt recorded.", table_cell_style)],
-        [Paragraph("5. Confirm", table_cell_bold), Paragraph("Customer says whether service is working.", table_cell_style), Paragraph("Confirmation stored as resolution outcome.", table_cell_style)],
-        [Paragraph("6. Ticket", table_cell_bold), Paragraph("If unresolved, system creates/updates ticket.", table_cell_style), Paragraph("Ticket ID, priority (P1-P4), SLA and category persisted in SQLite.", table_cell_style)],
-        [Paragraph("7. Track", table_cell_bold), Paragraph("Customer asks 'What is the status?'", table_cell_style), Paragraph("Current SQLite status + assigned team + history returned.", table_cell_style)],
-        [Paragraph("8. Escalate", table_cell_bold), Paragraph("Customer requests human help or AI cannot safely resolve.", table_cell_style), Paragraph("Ticket routed to support queue with priority escalation.", table_cell_style)],
-        [Paragraph("9. Reopen", table_cell_bold), Paragraph("Customer says issue returned/not fixed.", table_cell_style), Paragraph("Complaint reopened with previous resolution preserved.", table_cell_style)],
-        [Paragraph("10. Close", table_cell_bold), Paragraph("Customer confirms final resolution.", table_cell_style), Paragraph("Complaint moves to CLOSED and 1-5 star CSAT feedback captured.", table_cell_style)],
+    story.append(Paragraph("4. Admin Operational Complaint Lifecycle", h1_style))
+    ops_data = [
+        [Paragraph("Step", table_header_style), Paragraph("Admin / System Action", table_header_style), Paragraph("Outcome", table_header_style)],
+        [Paragraph("1. Monitor", table_cell_bold), Paragraph("Review dashboard, queue, alerts and complaint intelligence.", table_cell_style), Paragraph("Operational picture established.", table_cell_style)],
+        [Paragraph("2. Triage", table_cell_bold), Paragraph("Inspect category, priority, sentiment, escalation risk and incident links.", table_cell_style), Paragraph("Work prioritized.", table_cell_style)],
+        [Paragraph("3. Investigate", table_cell_bold), Paragraph("Use heatmap, spike detection, incident data and AI evidence.", table_cell_style), Paragraph("Likely issue scope identified.", table_cell_style)],
+        [Paragraph("4. Assign", table_cell_bold), Paragraph("Route to Field Ops, RF Team, Billing, Support L2 or Network Ops.", table_cell_style), Paragraph("Ownership established.", table_cell_style)],
+        [Paragraph("5. Resolve", table_cell_bold), Paragraph("Add notes, use approved SOP/RAG guidance and record resolution source.", table_cell_style), Paragraph("Resolution attempt tracked.", table_cell_style)],
+        [Paragraph("6. Verify", table_cell_bold), Paragraph("Customer confirms or rejects the proposed resolution.", table_cell_style), Paragraph("Closed-loop outcome captured.", table_cell_style)],
+        [Paragraph("7. Escalate/Reopen", table_cell_bold), Paragraph("Escalate or reopen when the issue is unresolved or returns.", table_cell_style), Paragraph("No silent closure.", table_cell_style)],
+        [Paragraph("8. Close", table_cell_bold), Paragraph("Finalize only after confirmation and preserve complete history.", table_cell_style), Paragraph("Auditable complaint lifecycle.", table_cell_style)],
     ]
-    story.append(make_table(journey_data, [60, 194, 250]))
+    story.append(make_table(ops_data, [85, 235, 184]))
     story.append(Spacer(1, 6))
 
-    story.append(Paragraph("4.1 Complaint Status Model", h2_style))
-    story.append(Paragraph("<code>NEW</code> &rarr; <code>VERIFICATION_REQUIRED</code> &rarr; <code>VERIFIED</code> &rarr; <code>CLASSIFIED</code> &rarr; <code>DIAGNOSING</code> &rarr; <code>IN_PROGRESS</code> &rarr; <code>RESOLVED_PENDING_CONFIRMATION</code> &rarr; <code>CLOSED</code>", body_style))
-    story.append(Paragraph("Alternative paths: <code>WAITING_FOR_CUSTOMER</code>, <code>HUMAN_ESCALATION</code>, <code>REOPENED</code>. Every status transition creates an immutable status-history record in SQLite with actor, timestamp and reason.", body_style))
+    story.append(Paragraph("4.1 Customer Service Channel", h2_style))
+    story.append(Paragraph(
+        "The customer assistant feeds the same operational lifecycle. Customer steps remain: Start → Verify → Diagnose → Resolve → "
+        "Confirm → Ticket → Track → Escalate → Reopen → Close. Every status transition is persisted in SQLite with actor, timestamp and reason.", body_style))
+
+    story.append(Paragraph("4.2 Complaint Status Model", h2_style))
+    story.append(Paragraph(
+        "NEW → VERIFICATION_REQUIRED → VERIFIED → CLASSIFIED → DIAGNOSING → IN_PROGRESS → RESOLVED_PENDING_CONFIRMATION → CLOSED<br/>"
+        "Alternative paths: WAITING_FOR_CUSTOMER, HUMAN_ESCALATION, REOPENED.", body_style))
     story.append(PageBreak())
 
     # ================= PAGE 6 =================
-    story.append(Paragraph("5. AI Customer Assistant", h1_style))
+    story.append(Paragraph("5. AI Operations & Customer Assistants", h1_style))
+    story.append(Paragraph("5.1 Admin AI Assistant — Primary Decision Support", h2_style))
     story.append(Paragraph(
-        "The assistant behaves as a workflow-driven support agent, not as a generic chatbot. It identifies the customer's "
-        "intent, collects missing information, calls the correct backend function, retrieves relevant knowledge from ChromaDB, "
-        "and generates a grounded response.", body_style))
-    
-    story.append(Paragraph("5.1 Supported Intents", h2_style))
-    intents_data = [
-        [Paragraph("Intent", table_header_style), Paragraph("Action", table_header_style)],
-        [Paragraph("REPORT_COMPLAINT", table_cell_bold), Paragraph("Collect details &rarr; verify &rarr; classify &rarr; create complaint.", table_cell_style)],
-        [Paragraph("DIAGNOSTIC", table_cell_bold), Paragraph("Run dynamic network line diagnostic & render speed telemetry card.", table_cell_style)],
-        [Paragraph("CHECK_STATUS", table_cell_bold), Paragraph("Retrieve authenticated customer's current ticket status/history.", table_cell_style)],
-        [Paragraph("TROUBLESHOOT", table_cell_bold), Paragraph("Retrieve relevant approved SOP from ChromaDB and guide the customer.", table_cell_style)],
-        [Paragraph("KNOWN_INCIDENT", table_cell_bold), Paragraph("Check active incident and explain known service impact.", table_cell_style)],
-        [Paragraph("CONFIRM_RESOLUTION", table_cell_bold), Paragraph("Record customer confirmation and close eligible ticket.", table_cell_style)],
-        [Paragraph("REJECT_RESOLUTION", table_cell_bold), Paragraph("Move complaint to REOPENED / escalation workflow.", table_cell_style)],
-        [Paragraph("REOPEN_COMPLAINT", table_cell_bold), Paragraph("Reopen eligible complaint and preserve history.", table_cell_style)],
-        [Paragraph("BILLING_QUERY", table_cell_bold), Paragraph("Provide approved billing guidance or route to support.", table_cell_style)],
-        [Paragraph("ESCALATE", table_cell_bold), Paragraph("Create human-support escalation with priority adjustment.", table_cell_style)],
-        [Paragraph("GENERAL_QUERY", table_cell_bold), Paragraph("Answer from approved knowledge or ask clarification.", table_cell_style)],
-    ]
-    story.append(make_table(intents_data, [130, 374]))
-    story.append(Spacer(1, 6))
+        "The Admin AI Assistant is a workflow-driven operations agent. It answers complex operational questions using live database "
+        "snapshots and ChromaDB SOP knowledge, explains complaint classifications and priority factors, summarizes incidents, and supports "
+        "NOC/admin decision-making. It does not directly mutate privileged state.", body_style))
 
-    story.append(Paragraph("5.2 Assistant Architecture (LangGraph 6-Node Workflow)", h2_style))
-    story.append(Paragraph("Customer message &rarr; <b>1. translate_input</b> (DistilBERT) &rarr; <b>2. route_intent</b> (Intent Classifier) &rarr; <b>3. retrieve_context</b> (ChromaDB RAG + Incidents) &rarr; <b>4. execute_action</b> (Speed Test / DB Mutations) &rarr; <b>5. synthesize_response</b> (Grounded Groq LLM) &rarr; <b>6. translate_output</b> (Devanagari Script & Cards).", body_style))
+    story.append(Paragraph("5.2 Admin Assistant Capabilities", h2_style))
+    story.append(Paragraph("• Queue and ticket summaries, priority and SLA explanations.", bullet_style))
+    story.append(Paragraph("• Incident and spike investigation with affected-region/customer context.", bullet_style))
+    story.append(Paragraph("• Root-cause evidence synthesis from structured patterns and approved knowledge.", bullet_style))
+    story.append(Paragraph("• SOP retrieval and operational troubleshooting guidance.", bullet_style))
+    story.append(Paragraph("• Status, assignment and escalation explanations from authoritative SQLite state.", bullet_style))
+    story.append(Paragraph("• Prompt chips and guided operational queries for fast NOC/admin briefings.", bullet_style))
 
-    story.append(Paragraph("5.3 Important Design Rule", h2_style))
+    story.append(Paragraph("5.3 Customer Assistant — Text Service Channel", h2_style))
     story.append(Paragraph(
-        "<b>The LLM does not directly change ticket status or invent live data.</b> It can interpret the request and generate "
-        "language, but actions such as creating a complaint, checking status, changing status, confirming resolution and "
-        "reopening a complaint are performed through authenticated backend APIs.", body_style))
+        "The customer assistant handles REPORT_COMPLAINT, DIAGNOSTIC, CHECK_STATUS, TROUBLESHOOT, KNOWN_INCIDENT, "
+        "CONFIRM_RESOLUTION, REJECT_RESOLUTION, REOPEN_COMPLAINT, BILLING_QUERY, ESCALATE and GENERAL_QUERY "
+        "through the LangGraph customer workflow.", body_style))
+
+    story.append(Paragraph("5.4 LangGraph Workflows", h2_style))
+    story.append(Paragraph(
+        "<b>Admin workflow:</b> query → retrieve live DB context → retrieve SOP/knowledge → reason → explain recommendation → authorized action when permitted.<br/>"
+        "<b>Customer workflow:</b> translate_input → route_intent → retrieve_context → execute_action → synthesize_response → translate_output.", body_style))
     story.append(PageBreak())
 
     # ================= PAGE 7 =================
     story.append(Paragraph("6. Solution Architecture", h1_style))
     arch_data = [
         [Paragraph("Layer", table_header_style), Paragraph("Components", table_header_style), Paragraph("Purpose", table_header_style)],
-        [Paragraph("Customer Layer", table_cell_bold), Paragraph("React 40/60 chat, voice STT/TTS, diagnostic cards", table_cell_style), Paragraph("Complaint reporting, speed diagnostics, troubleshooting, tracking and confirmation.", table_cell_style)],
-        [Paragraph("Admin Layer", table_cell_bold), Paragraph("React operations dashboard, AI Assistant, Theme Engine", table_cell_style), Paragraph("Queue, ticket management, incidents, heatmap, analytics, alert inbox, notify queue, audit.", table_cell_style)],
-        [Paragraph("API Layer", table_cell_bold), Paragraph("FastAPI + JWT authentication + scheduler", table_cell_style), Paragraph("Central business logic, authorization and deterministic actions.", table_cell_style)],
+        [Paragraph("Admin Layer", table_cell_bold), Paragraph("React operations dashboard, Admin AI Assistant, Theme Engine", table_cell_style), Paragraph("Primary control plane: queue, tickets, incidents, heatmap, analytics, alerts, notifications and audit.", table_cell_style)],
+        [Paragraph("Customer Layer", table_cell_bold), Paragraph("React 40/60 text chat, diagnostic cards", table_cell_style), Paragraph("Complaint reporting, diagnostics, troubleshooting, tracking and confirmation.", table_cell_style)],
+        [Paragraph("API Layer", table_cell_bold), Paragraph("Python + FastAPI + Uvicorn + hashlib-based authentication", table_cell_style), Paragraph("Central business logic, authorization and deterministic actions.", table_cell_style)],
         [Paragraph("AI Orchestration", table_cell_bold), Paragraph("LangGraph Multi-Task StateGraph", table_cell_style), Paragraph("Controls multi-turn state continuation and tool execution.", table_cell_style)],
-        [Paragraph("Multilingual NLP", table_cell_bold), Paragraph("Hugging Face DistilBERT (multilingual-cased)", table_cell_style), Paragraph("Tokenization, Hinglish normalization, Devanagari validation.", table_cell_style)],
-        [Paragraph("ML Intelligence", table_cell_bold), Paragraph("scikit-learn (TF-IDF + LogReg), Multi-Factor Scoring", table_cell_style), Paragraph("Classification (Macro-F1 >= 82.4%), sentiment, urgency, escalation, priority scoring.", table_cell_style)],
+        [Paragraph("Multilingual NLP", table_cell_bold), Paragraph("Hugging Face DistilBERT (multilingual-cased)", table_cell_style), Paragraph("Tokenization, Hinglish normalization and Devanagari validation.", table_cell_style)],
+        [Paragraph("ML Intelligence", table_cell_bold), Paragraph("scikit-learn (TF-IDF + Logistic Regression) + Multi-Factor Scoring", table_cell_style), Paragraph("Classification, sentiment, urgency, escalation and priority scoring.", table_cell_style)],
         [Paragraph("Vector RAG", table_cell_bold), Paragraph("ChromaDB + Sentence Transformers (all-MiniLM-L6-v2)", table_cell_style), Paragraph("Grounded troubleshooting, FAQs, SOPs and approved resolved cases.", table_cell_style)],
-        [Paragraph("Generative AI", table_cell_bold), Paragraph("Groq API (Llama-3, Whisper) + Offline Fallbacks", table_cell_style), Paragraph("Conversation generation, summaries, explanations and root-cause narrative.", table_cell_style)],
-        [Paragraph("Geolocation", table_cell_bold), Paragraph("Geoapify Geocoding API + dynamic cache", table_cell_style), Paragraph("Location coordinates for Leaflet regional heatmap.", table_cell_style)],
+        [Paragraph("Generative AI", table_cell_bold), Paragraph("Groq API (Llama models) + offline fallbacks", table_cell_style), Paragraph("Conversation, summaries, explanations and root-cause narrative.", table_cell_style)],
+        [Paragraph("Geolocation", table_cell_bold), Paragraph("Geoapify Geocoding API + cache", table_cell_style), Paragraph("Location coordinates for Leaflet regional heatmap.", table_cell_style)],
         [Paragraph("Operational DB", table_cell_bold), Paragraph("SQLite (tci.db with WAL mode)", table_cell_style), Paragraph("Live complaints, users, status history, incidents, notifications and audit logs.", table_cell_style)],
-        [Paragraph("Analytics / Detection", table_cell_bold), Paragraph("Spike detection, heatmap, incident engine", table_cell_style), Paragraph("Proactive service intelligence.", table_cell_style)],
+        [Paragraph("Analytics / Detection", table_cell_bold), Paragraph("Spike detection, heatmap, incident engine", table_cell_style), Paragraph("Proactive operational intelligence.", table_cell_style)],
     ]
     story.append(make_table(arch_data, [95, 175, 234]))
     story.append(Spacer(1, 6))
 
     story.append(Paragraph("6.1 Data Flow", h2_style))
     story.append(Paragraph(
-        "Customer/Admin/API input &rarr; validation &rarr; complaint persistence &rarr; SQLite &rarr; incident/duplicate evaluation &rarr; "
-        "resolution/ChromaDB RAG &rarr; ticket lifecycle &rarr; notification/analytics &rarr; feedback.", body_style))
-    story.append(Paragraph(
-        "<b>SQLite is the operational source of truth. ChromaDB is the knowledge retrieval layer. Groq is the "
-        "generation/reasoning service.</b> This separation prevents the chatbot from becoming the database or the source of "
-        "live ticket truth.", body_style))
+        "Admin/customer/API input → validation → complaint persistence → SQLite → incident/duplicate evaluation → resolution/ChromaDB "
+        "RAG → ticket lifecycle → notification/analytics → feedback.<br/><br/>"
+        "<b>Operational source of truth:</b> SQLite. <b>Knowledge retrieval:</b> ChromaDB. <b>Generation/reasoning:</b> Groq. "
+        "The LLM cannot become the source of live ticket truth.", body_style))
     story.append(PageBreak())
 
     # ================= PAGE 8 =================
@@ -491,8 +466,8 @@ def build_new_prd_pdf(output_path: str):
 
     story.append(Paragraph("9.3 RAG Grounding Rule", h2_style))
     story.append(Paragraph(
-        "<b>Every troubleshooting response should be generated from retrieved approved knowledge.</b> The assistant should "
-        "not claim a cause, ETA, policy or fix that is not supported by the retrieved ChromaDB chunks or live SQLite backend state.", body_style))
+        "<b>Every troubleshooting response should be generated from retrieved approved knowledge.</b> The assistant should not claim a cause, "
+        "ETA, policy or fix that is not supported by the retrieved ChromaDB chunks or live SQLite backend state.", body_style))
     story.append(PageBreak())
 
     # ================= PAGE 11 =================
@@ -526,7 +501,7 @@ def build_new_prd_pdf(output_path: str):
     ]
     story.append(make_table(entities_data, [140, 364]))
     story.append(Spacer(1, 4))
-    story.append(Paragraph("10.2 Required Complaint Fields: <code>complaint_id, customer_id, text, category, region, lat, long, service_type, sentiment, urgency, escalation_risk, priority_score, priority_label, sla_deadline, status, incident_id, assigned_to, ticket_summary, created_at</code>", body_style))
+    story.append(Paragraph("10.2 Required Complaint Fields: complaint_id, customer_id, text, category, region, lat, long, service_type, sentiment, urgency, escalation_risk, priority_score, priority_label, sla_deadline, status, incident_id, assigned_to, ticket_summary, created_at", body_style))
     story.append(PageBreak())
 
     # ================= PAGE 12 =================
@@ -541,15 +516,15 @@ def build_new_prd_pdf(output_path: str):
 
     story.append(Paragraph("11.2 Ticket Status Visibility", h2_style))
     story.append(Paragraph("• Customer can ask for the status in natural language (English, Hindi, Hinglish).", bullet_style))
-    story.append(Paragraph("• Assistant retrieves the current authoritative state directly from SQLite (<code>tci.db</code>).", bullet_style))
+    story.append(Paragraph("• Assistant retrieves the current authoritative state directly from SQLite (tci.db).", bullet_style))
     story.append(Paragraph("• Response includes status, last update, assigned team, SLA countdown, and a short explanation.", bullet_style))
     story.append(Paragraph("• Status history is available for transparency in the customer drawer.", bullet_style))
 
     story.append(Paragraph("11.3 Resolution Confirmation", h2_style))
-    story.append(Paragraph("• AI/admin proposes a resolution &rarr; Ticket enters <code>RESOLVED_PENDING_CONFIRMATION</code>.", bullet_style))
+    story.append(Paragraph("• AI/admin proposes a resolution → Ticket enters RESOLVED_PENDING_CONFIRMATION.", bullet_style))
     story.append(Paragraph("• Customer is explicitly asked whether the issue is fixed.", bullet_style))
-    story.append(Paragraph("• <b>YES</b> &rarr; record confirmation &rarr; <code>CLOSED</code> &rarr; CSAT feedback.", bullet_style))
-    story.append(Paragraph("• <b>NO</b> &rarr; <code>REOPENED</code> / <code>HUMAN_ESCALATION</code> &rarr; support queue.", bullet_style))
+    story.append(Paragraph("• <b>YES</b> → record confirmation → CLOSED → CSAT feedback.", bullet_style))
+    story.append(Paragraph("• <b>NO</b> → REOPENED / HUMAN_ESCALATION → support queue.", bullet_style))
 
     story.append(Paragraph("11.4 Customer Feedback", h2_style))
     story.append(Paragraph("After closure, the customer can provide a 1–5 star rating and optional comment. Feedback is stored against the complaint and surfaced in admin analytics for resolution-quality monitoring.", body_style))
@@ -568,7 +543,7 @@ def build_new_prd_pdf(output_path: str):
     story.append(Paragraph("12.2 Geographic Heatmap", h2_style))
     story.append(Paragraph("• Show complaint density by region via interactive Leaflet map.", bullet_style))
     story.append(Paragraph("• Filter by time, category, service and severity.", bullet_style))
-    story.append(Paragraph("• Drill down from region &rarr; incident &rarr; complaint list.", bullet_style))
+    story.append(Paragraph("• Drill down from region → incident → complaint list.", bullet_style))
     story.append(Paragraph("• Highlight abnormal regions (Red surge circles) and active incidents.", bullet_style))
 
     story.append(Paragraph("12.3 AI Root-Cause Investigator", h2_style))
@@ -625,19 +600,17 @@ def build_new_prd_pdf(output_path: str):
     story.append(make_table(diag_data, [100, 130, 120, 154]))
     story.append(Spacer(1, 6))
 
-    story.append(Paragraph("14.1 Diagnostic Workflow", h2_style))
-    story.append(Paragraph("Customer requests speed test &rarr; Backend inspects customer region & active incidents &rarr; Returns telemetry payload &rarr; Rendered as visual diagnostic card in chat &rarr; Read out via bilingual TTS audio.", body_style))
+    story.append(Paragraph("Customer requests speed test → Backend inspects customer region & active incidents → Returns telemetry payload → Rendered as a visual diagnostic card in chat.", body_style))
     story.append(PageBreak())
 
     # ================= PAGE 16 =================
     story.append(Paragraph("15. Backend REST API Specifications", h1_style))
     api_data = [
         [Paragraph("Method & Route", table_header_style), Paragraph("Role", table_header_style), Paragraph("Purpose & Functionality", table_header_style)],
-        [Paragraph("POST /api/auth/login", table_cell_bold), Paragraph("Public", table_cell_style), Paragraph("Customer/admin authentication; returns signed JWT.", table_cell_style)],
+        [Paragraph("POST /api/auth/login", table_cell_bold), Paragraph("Public", table_cell_style), Paragraph("Customer/admin authentication using implemented password hashing and role-aware authorization.", table_cell_style)],
         [Paragraph("POST /api/auth/signup", table_cell_bold), Paragraph("Public", table_cell_style), Paragraph("Customer self-registration with region and service.", table_cell_style)],
-        [Paragraph("POST /api/chat", table_cell_bold), Paragraph("Customer", table_cell_style), Paragraph("Conversational endpoint executing LangGraph StateGraph.", table_cell_style)],
+        [Paragraph("POST /api/chat", table_cell_bold), Paragraph("Customer", table_cell_style), Paragraph("Text conversational endpoint executing LangGraph StateGraph.", table_cell_style)],
         [Paragraph("POST /api/chat/diagnostic", table_cell_bold), Paragraph("Customer", table_cell_style), Paragraph("Executes real-time network speed/latency diagnostics.", table_cell_style)],
-        [Paragraph("POST /api/chat/voice", table_cell_bold), Paragraph("Customer", table_cell_style), Paragraph("Multilingual voice transcription via Groq Whisper.", table_cell_style)],
         [Paragraph("GET /api/my/tickets", table_cell_bold), Paragraph("Customer", table_cell_style), Paragraph("Lists authenticated customer's own tickets.", table_cell_style)],
         [Paragraph("GET /api/my/tickets/{id}/history", table_cell_bold), Paragraph("Customer", table_cell_style), Paragraph("Status history timeline for a specific owned ticket.", table_cell_style)],
         [Paragraph("POST /api/admin/upload/ingest", table_cell_bold), Paragraph("Admin", table_cell_style), Paragraph("Universal CSV ingestion with auto-schema mapping & ETL.", table_cell_style)],
@@ -653,7 +626,7 @@ def build_new_prd_pdf(output_path: str):
     story.append(Spacer(1, 6))
 
     story.append(Paragraph("15.1 API Security", h2_style))
-    story.append(Paragraph("• Signed JWT authentication on all protected routes.<br/>"
+    story.append(Paragraph("• hashlib-based password hashing and role-aware authorization on protected routes.<br/>"
                            "• Customer ownership verification on every complaint read/write.<br/>"
                            "• Server-side validation of all status transitions.<br/>"
                            "• Comprehensive audit logging for privileged actions.<br/>"
@@ -667,7 +640,6 @@ def build_new_prd_pdf(output_path: str):
     cost_data = [
         [Paragraph("Component", table_header_style), Paragraph("MVP Choice", table_header_style), Paragraph("Operational Role & Cost Profile", table_header_style)],
         [Paragraph("Generative LLM API", table_cell_bold), Paragraph("Groq Free Plan", table_cell_style), Paragraph("Assistant responses, ticket summaries, root-cause narratives (Zero cost).", table_cell_style)],
-        [Paragraph("Speech Recognition", table_cell_bold), Paragraph("Groq Whisper", table_cell_style), Paragraph("Multilingual voice complaint transcription (Zero cost).", table_cell_style)],
         [Paragraph("Embeddings", table_cell_bold), Paragraph("sentence-transformers", table_cell_style), Paragraph("all-MiniLM-L6-v2 local CPU embeddings (Zero cost).", table_cell_style)],
         [Paragraph("Vector Store", table_cell_bold), Paragraph("ChromaDB (local)", table_cell_style), Paragraph("Persistent vector store for SOP retrieval (Zero cost).", table_cell_style)],
         [Paragraph("Multilingual Tokenizer", table_cell_bold), Paragraph("Hugging Face DistilBERT", table_cell_style), Paragraph("distilbert-base-multilingual-cased (Zero cost).", table_cell_style)],
@@ -677,13 +649,6 @@ def build_new_prd_pdf(output_path: str):
         [Paragraph("Geocoding", table_cell_bold), Paragraph("Geoapify (Free tier)", table_cell_style), Paragraph("Location coordinates with memory cache (Zero cost).", table_cell_style)],
     ]
     story.append(make_table(cost_data, [110, 130, 264]))
-    story.append(Spacer(1, 6))
-
-    story.append(Paragraph("16.1 Deterministic Offline Fallbacks & Cost Statement", h2_style))
-    story.append(Paragraph(
-        "<b>Target is $0 software/API spend for the hackathon demo.</b> Every external API call includes an immediate "
-        "deterministic offline fallback, guaranteeing that the entire application operates and all automated tests pass "
-        "even with no API keys or internet connection.", body_style))
     story.append(PageBreak())
 
     # ================= PAGE 18 =================
@@ -691,14 +656,14 @@ def build_new_prd_pdf(output_path: str):
     nfr_data = [
         [Paragraph("Category", table_header_style), Paragraph("Requirement & Implemented Standard", table_header_style)],
         [Paragraph("Performance", table_cell_bold), Paragraph("Customer/API interaction latency <= 1.5s on live Groq LLM, <= 50ms on offline fallback.", table_cell_style)],
-        [Paragraph("Availability", table_cell_bold), Paragraph("Ticket/status operations remain 100% usable even if external LLM is offline.", table_cell_style)],
-        [Paragraph("Security", table_cell_bold), Paragraph("Scrypt password hashing, signed JWT tokens, role-based authorization guards.", table_cell_style)],
-        [Paragraph("Privacy", table_cell_bold), Paragraph("Automatic regex PII redaction of names, phone numbers, and emails upon ingestion.", table_cell_style)],
-        [Paragraph("Reliability", table_cell_bold), Paragraph("Deterministic SQLite database transactions; AI failures never create invalid states.", table_cell_style)],
-        [Paragraph("Explainability", table_cell_bold), Paragraph("AI classification, priority scores, and root causes expose contributing factors and evidence.", table_cell_style)],
-        [Paragraph("Auditability", table_cell_bold), Paragraph("All status, assignment, resolution, escalation and notification actions are logged immutably.", table_cell_style)],
-        [Paragraph("Language", table_cell_bold), Paragraph("Full bidirectional English, Hindi (Devanagari), and Hinglish transliteration support.", table_cell_style)],
-        [Paragraph("Cost", table_cell_bold), Paragraph("100% free-tier architecture with zero cloud infrastructure overhead.", table_cell_style)],
+        [Paragraph("Availability", table_cell_bold), Paragraph("Ticket/status operations remain usable even if external LLM services are offline.", table_cell_style)],
+        [Paragraph("Security", table_cell_bold), Paragraph("hashlib-based password hashing and role-based authorization guards; no JWT requirement in the implemented flow.", table_cell_style)],
+        [Paragraph("Privacy", table_cell_bold), Paragraph("Automatic regex PII redaction of names, phone numbers and emails upon ingestion.", table_cell_style)],
+        [Paragraph("Reliability", table_cell_bold), Paragraph("Deterministic SQLite transactions; AI failures never create invalid states.", table_cell_style)],
+        [Paragraph("Explainability", table_cell_bold), Paragraph("AI classification, priority scores and root causes expose contributing factors and evidence.", table_cell_style)],
+        [Paragraph("Auditability", table_cell_bold), Paragraph("Status, assignment, resolution, escalation and notification actions are logged immutably.", table_cell_style)],
+        [Paragraph("Language", table_cell_bold), Paragraph("English, Hindi (Devanagari) and Hinglish transliteration support.", table_cell_style)],
+        [Paragraph("Cost", table_cell_bold), Paragraph("Free-tier architecture with zero cloud infrastructure overhead for the hackathon MVP.", table_cell_style)],
     ]
     story.append(make_table(nfr_data, [100, 404]))
     story.append(Spacer(1, 6))
@@ -709,22 +674,24 @@ def build_new_prd_pdf(output_path: str):
                            "• Never claim resolution without explicit customer confirmation.<br/>"
                            "• Never reveal another customer's private data.<br/>"
                            "• Never perform privileged database actions directly from generated text.<br/>"
-                           "• When confidence or evidence is insufficient, ask clarification or escalate.", body_style))
+                           "• When confidence or evidence is insufficient, ask for clarification or escalate.", body_style))
     story.append(PageBreak())
 
     # ================= PAGE 19 =================
-    story.append(Paragraph("18. Recommended Technology Stack", h1_style))
+    story.append(Paragraph("18. Technology Stack — Implemented Project Stack", h1_style))
     tech_data = [
-        [Paragraph("Layer", table_header_style), Paragraph("Technology Choice & Version", table_header_style)],
-        [Paragraph("Customer UI", table_cell_bold), Paragraph("React 18/19, Vite, 40/60 Split Layout, Theme Engine (Dark/Light mode).", table_cell_style)],
-        [Paragraph("Admin Dashboard", table_cell_bold), Paragraph("React + Leaflet + React-Leaflet + Recharts + Admin AI Assistant.", table_cell_style)],
-        [Paragraph("Backend", table_cell_bold), Paragraph("Python 3.10+ + FastAPI + Uvicorn.", table_cell_style)],
-        [Paragraph("Database", table_cell_bold), Paragraph("SQLite 3 with WAL Mode (tci.db).", table_cell_style)],
-        [Paragraph("Vector Store", table_cell_bold), Paragraph("ChromaDB Persistent Client (backend/data/chroma_db).", table_cell_style)],
-        [Paragraph("Embeddings", table_cell_bold), Paragraph("Sentence Transformers (all-MiniLM-L6-v2).", table_cell_style)],
-        [Paragraph("Multilingual NLP", table_cell_bold), Paragraph("Hugging Face Transformers (distilbert-base-multilingual-cased).", table_cell_style)],
-        [Paragraph("LLM & Speech", table_cell_bold), Paragraph("Groq Cloud API (Llama-3.3-70b, Llama-3.1-8b, Whisper-large-v3-turbo).", table_cell_style)],
-        [Paragraph("Geocoding", table_cell_bold), Paragraph("Geoapify Geocoding REST API (Cached).", table_cell_style)],
+        [Paragraph("Area", table_header_style), Paragraph("Technology / Implementation", table_header_style)],
+        [Paragraph("Admin Frontend", table_cell_bold), Paragraph("React + Vite; Admin Operations Dashboard; Admin AI Assistant; Recharts; React-Leaflet; shared Dark/Light Theme Engine.", table_cell_style)],
+        [Paragraph("Customer Frontend", table_cell_bold), Paragraph("React + Vite; 40/60 customer text-chat layout; diagnostic cards.", table_cell_style)],
+        [Paragraph("Backend", table_cell_bold), Paragraph("Python + FastAPI + Uvicorn; REST-style backend APIs and deterministic business logic.", table_cell_style)],
+        [Paragraph("Authentication", table_cell_bold), Paragraph("hashlib-based password hashing with role-aware authorization.", table_cell_style)],
+        [Paragraph("AI Orchestration", table_cell_bold), Paragraph("LangGraph Multi-Task StateGraph; separate customer and admin workflows.", table_cell_style)],
+        [Paragraph("ML / NLP", table_cell_bold), Paragraph("Hugging Face DistilBERT multilingual model; scikit-learn TF-IDF + Logistic Regression; multi-factor priority scoring.", table_cell_style)],
+        [Paragraph("RAG / Knowledge", table_cell_bold), Paragraph("ChromaDB persistent vector store + Sentence Transformers (all-MiniLM-L6-v2).", table_cell_style)],
+        [Paragraph("Generative AI", table_cell_bold), Paragraph("Groq Cloud API for Llama models, with deterministic offline fallbacks.", table_cell_style)],
+        [Paragraph("Database", table_cell_bold), Paragraph("SQLite 3 (tci.db) with WAL mode, foreign keys, status history and audit logs.", table_cell_style)],
+        [Paragraph("Geolocation", table_cell_bold), Paragraph("Geoapify Geocoding REST API with caching; Leaflet for regional heatmaps.", table_cell_style)],
+        [Paragraph("Development / Runtime", table_cell_bold), Paragraph("VS Code, npm/Vite frontend workflow, Python virtual environment, FastAPI/Uvicorn backend runtime.", table_cell_style)],
     ]
     story.append(make_table(tech_data, [120, 384]))
     story.append(Spacer(1, 6))
@@ -736,8 +703,8 @@ def build_new_prd_pdf(output_path: str):
         [Paragraph("ChromaDB", table_cell_bold), Paragraph("Retrieve semantic SOP knowledge.", table_cell_style), Paragraph("Store authoritative live ticket status.", table_cell_style)],
         [Paragraph("scikit-learn ML", table_cell_bold), Paragraph("Classify/score structured complaint data.", table_cell_style), Paragraph("Perform privileged database mutation.", table_cell_style)],
         [Paragraph("Groq LLM", table_cell_bold), Paragraph("Reason over supplied context and generate language.", table_cell_style), Paragraph("Invent current system state or ticket IDs.", table_cell_style)],
-        [Paragraph("FastAPI", table_cell_bold), Paragraph("Authorize and execute state transitions.", table_cell_style), Paragraph("Depend on LLM text for authorization.", table_cell_style)],
-        [Paragraph("Admin Dashboard", table_cell_bold), Paragraph("Operate, monitor, and approve broadcasts.", table_cell_style), Paragraph("Bypass backend authorization or audit logs.", table_cell_style)],
+        [Paragraph("FastAPI", table_cell_bold), Paragraph("Authorize and execute state transitions.", table_cell_style), Paragraph("Depend on generated text for authorization.", table_cell_style)],
+        [Paragraph("Admin Dashboard", table_cell_bold), Paragraph("Operate, monitor and approve broadcasts.", table_cell_style), Paragraph("Bypass backend authorization or audit logs.", table_cell_style)],
     ]
     story.append(make_table(sep_data, [95, 195, 214]))
     story.append(PageBreak())
@@ -745,138 +712,114 @@ def build_new_prd_pdf(output_path: str):
     # ================= PAGE 20 =================
     story.append(Paragraph("19. Testing & Acceptance Criteria", h1_style))
     test_scenarios = [
-        [Paragraph("Scenario", table_header_style), Paragraph("Acceptance Criteria", table_header_style)],
-        [Paragraph("New complaint", table_cell_bold), Paragraph("Customer describes issue &rarr; assistant collects details &rarr; customer verifies &rarr; ticket created.", table_cell_style)],
-        [Paragraph("Known outage", table_cell_bold), Paragraph("Assistant identifies matching incident &rarr; links complaint &rarr; avoids unnecessary duplicate ticket.", table_cell_style)],
-        [Paragraph("RAG troubleshooting", table_cell_bold), Paragraph("Assistant retrieves approved SOP &rarr; customer performs steps &rarr; confirmation requested.", table_cell_style)],
-        [Paragraph("Unresolved issue", table_cell_bold), Paragraph("Customer rejects fix &rarr; complaint reopens/escalates &rarr; support queue receives ticket.", table_cell_style)],
-        [Paragraph("Status check", table_cell_bold), Paragraph("Customer asks status &rarr; current DB state returned, not stale model memory.", table_cell_style)],
-        [Paragraph("Admin update", table_cell_bold), Paragraph("Admin changes status &rarr; customer sees updated state on next request/notification.", table_cell_style)],
-        [Paragraph("Spike detection", table_cell_bold), Paragraph("Synthetic complaint burst &rarr; abnormality detected &rarr; incident appears on dashboard.", table_cell_style)],
-        [Paragraph("Root cause", table_cell_bold), Paragraph("Dashboard shows hypothesis with evidence bullets and confidence gauge (90%+).", table_cell_style)],
-        [Paragraph("Authorization", table_cell_bold), Paragraph("Customer cannot read another customer's complaint even with its ticket ID.", table_cell_style)],
-        [Paragraph("AI outage", table_cell_bold), Paragraph("Groq unavailable &rarr; deterministic status/ticket APIs still work with offline fallbacks.", table_cell_style)],
+        [Paragraph("Scenario", table_header_style), Paragraph("Admin-Oriented Acceptance Criteria", table_header_style)],
+        [Paragraph("Admin overview", table_cell_bold), Paragraph("Dashboard shows complaint volume, open/resolved tickets, high priority, SLA risk and active incidents.", table_cell_style)],
+        [Paragraph("Queue management", table_cell_bold), Paragraph("Admin can search/filter, assign, update, escalate and inspect ticket history.", table_cell_style)],
+        [Paragraph("Incident investigation", table_cell_bold), Paragraph("Spike detection creates/updates an incident and links matching complaints.", table_cell_style)],
+        [Paragraph("Root cause", table_cell_bold), Paragraph("Dashboard shows evidence signals, confidence and affected scope for an AI hypothesis.", table_cell_style)],
+        [Paragraph("Admin AI", table_cell_bold), Paragraph("Operations AI answers using live DB snapshots and approved ChromaDB SOPs without unrestricted DB access.", table_cell_style)],
+        [Paragraph("Notification approval", table_cell_bold), Paragraph("Admin reviews/approves proactive incident notifications before broadcast.", table_cell_style)],
+        [Paragraph("Customer resolution", table_cell_bold), Paragraph("Customer confirmation closes an eligible complaint; rejection reopens/escalates.", table_cell_style)],
+        [Paragraph("Authorization", table_cell_bold), Paragraph("A customer cannot read another customer's complaint even with its ticket ID.", table_cell_style)],
+        [Paragraph("AI outage", table_cell_bold), Paragraph("Groq unavailable → deterministic ticket/status APIs continue to work with offline fallbacks.", table_cell_style)],
     ]
     story.append(make_table(test_scenarios, [120, 384]))
     story.append(Spacer(1, 6))
 
     story.append(Paragraph("19.1 Key KPIs & Validated Benchmarks", h2_style))
-    story.append(Paragraph("• <b>Complaint classification macro-F1:</b> >= 82.4% (Exceeds >= 80% target on held-out split).<br/>"
-                           "• <b>Intent routing accuracy:</b> >= 95.0% across 15+ supported test intents.<br/>"
+    story.append(Paragraph("• <b>Complaint classification macro-F1:</b> >= 82.4% on the held-out split.<br/>"
+                           "• <b>Intent routing accuracy:</b> >= 95.0% across 15+ supported intents.<br/>"
                            "• <b>Ticket creation correctness:</b> 100% in automated workflow tests.<br/>"
                            "• <b>Status retrieval correctness:</b> 100% in authorized customer tests.<br/>"
                            "• <b>Resolution confirmation capture:</b> 100% of AI-assisted resolution attempts.<br/>"
-                           "• <b>Test suite pass rate:</b> 100% (106+ passing tests in <code>backend/tests/</code>).", body_style))
+                           "• <b>Test suite pass rate:</b> 100% (106+ passing backend tests as specified in the PRD).", body_style))
     story.append(PageBreak())
 
     # ================= PAGE 21 =================
     story.append(Paragraph("20. Implementation Plan & Demo", h1_style))
     plan_phases = [
         [Paragraph("Phase", table_header_style), Paragraph("Implementation Milestone", table_header_style)],
-        [Paragraph("1", table_cell_bold), Paragraph("SQLite schema + authentication + role-based access + demo accounts.", table_cell_style)],
-        [Paragraph("2", table_cell_bold), Paragraph("FastAPI complaint/status APIs + universal CSV schema-mapper + audit logging.", table_cell_style)],
-        [Paragraph("3", table_cell_bold), Paragraph("LangGraph customer assistant + conversation state + intent routing + DistilBERT.", table_cell_style)],
-        [Paragraph("4", table_cell_bold), Paragraph("Complaint verification + ticket creation + live status tracking + line speed diagnostic.", table_cell_style)],
-        [Paragraph("5", table_cell_bold), Paragraph("ChromaDB vector store + SentenceTransformers + SOP troubleshooting workflow.", table_cell_style)],
-        [Paragraph("6", table_cell_bold), Paragraph("Resolution confirmation + confirm-to-close loop + reopen + escalation.", table_cell_style)],
-        [Paragraph("7", table_cell_bold), Paragraph("Admin dashboard queue + ticket drawer + team assignment.", table_cell_style)],
-        [Paragraph("8", table_cell_bold), Paragraph("Leaflet heatmap + Geoapify geocoding + spike detection + incident management.", table_cell_style)],
-        [Paragraph("9", table_cell_bold), Paragraph("Root-cause investigator + evidence dossier panel + confidence gauge.", table_cell_style)],
-        [Paragraph("10", table_cell_bold), Paragraph("Proactive notification queue + admin approval + in-app notification feed.", table_cell_style)],
-        [Paragraph("11", table_cell_bold), Paragraph("LangGraph Admin AI Assistant + prompt chips + decision support cockpit.", table_cell_style)],
-        [Paragraph("12", table_cell_bold), Paragraph("Theme engine (Dark/Light), multilingual voice STT/TTS, full test suite validation.", table_cell_style)],
+        [Paragraph("1", table_cell_bold), Paragraph("Admin dashboard foundation, SQLite schema, authentication, role-based access and demo accounts.", table_cell_style)],
+        [Paragraph("2", table_cell_bold), Paragraph("FastAPI complaint/status APIs, CSV schema mapper and audit logging.", table_cell_style)],
+        [Paragraph("3", table_cell_bold), Paragraph("Admin AI Assistant + LangGraph admin workflow + live DB snapshots + ChromaDB SOP retrieval.", table_cell_style)],
+        [Paragraph("4", table_cell_bold), Paragraph("Admin queue, ticket drawer, assignment, priority/SLA and status management.", table_cell_style)],
+        [Paragraph("5", table_cell_bold), Paragraph("Leaflet heatmap, Geoapify geocoding, spike detection and incident management.", table_cell_style)],
+        [Paragraph("6", table_cell_bold), Paragraph("Root-cause investigator, evidence dossier and confidence gauge.", table_cell_style)],
+        [Paragraph("7", table_cell_bold), Paragraph("Proactive notification queue, admin approval and in-app notification feed.", table_cell_style)],
+        [Paragraph("8", table_cell_bold), Paragraph("Customer LangGraph assistant, conversation state, intent routing and DistilBERT.", table_cell_style)],
+        [Paragraph("9", table_cell_bold), Paragraph("Complaint verification, ticket creation, live status tracking and line diagnostics.", table_cell_style)],
+        [Paragraph("10", table_cell_bold), Paragraph("ChromaDB/SentenceTransformers troubleshooting and resolution confirmation loop.", table_cell_style)],
+        [Paragraph("11", table_cell_bold), Paragraph("Reopen/escalation workflow, customer feedback and analytics.", table_cell_style)],
+        [Paragraph("12", table_cell_bold), Paragraph("Theme engine (Dark/Light), text-chat UI validation and full test-suite validation.", table_cell_style)],
     ]
     story.append(make_table(plan_phases, [45, 459]))
     story.append(Spacer(1, 6))
 
-    story.append(Paragraph("20.1 Minimum Successful Demo", h2_style))
-    story.append(Paragraph("• Customer reports a broadband/network problem in natural language (English/Hindi/Hinglish).<br/>"
-                           "• Assistant verifies details and checks whether the region has an active incident.<br/>"
-                           "• Known issue is handled through incident explanation or ChromaDB RAG troubleshooting.<br/>"
-                           "• Unresolved complaint becomes a ticket with P1-P4 priority score and SLA countdown.<br/>"
-                           "• Admin updates the ticket; customer sees the update in real time.<br/>"
-                           "• Customer rejects an attempted resolution; ticket reopens/escalates.<br/>"
-                           "• Outage spike appears on the Leaflet heatmap in red.<br/>"
-                           "• System creates an incident and generates an evidence-backed root-cause dossier.<br/>"
-                           "• Admin reviews/approves a proactive broadcast customer notification.<br/>"
-                           "• Admin queries the Operations AI Assistant for decision support.", body_style))
+    story.append(Paragraph("20.1 Minimum Successful Admin Demo", h2_style))
+    story.append(Paragraph("• Admin opens the dashboard and immediately sees queue, priority, SLA, incident and trend information.<br/>"
+                           "• Admin filters a complaint cluster and investigates the associated incident/heatmap.<br/>"
+                           "• Admin asks the Operations AI Assistant why the spike is occurring and receives evidence-backed analysis.<br/>"
+                           "• Admin assigns the affected tickets to the appropriate support/network team.<br/>"
+                           "• Admin updates status and proposes a resolution; the customer receives the update.<br/>"
+                           "• Customer confirms or rejects the resolution; the dashboard reflects the resulting closed or reopened state.<br/>"
+                           "• Admin reviews and approves a proactive notification for affected customers.<br/>"
+                           "• Admin uses the audit trail to verify the operational actions.", body_style))
     story.append(PageBreak())
 
     # ================= PAGE 22 =================
     story.append(Paragraph("21. Product Differentiation", h1_style))
     diff_data = [
         [Paragraph("Traditional Complaint System", table_header_style), Paragraph("Proposed TelConnect Platform", table_header_style)],
-        [Paragraph("Collects complaint and creates passive ticket.", table_cell_bold), Paragraph("Understands complaint and attempts autonomous grounded resolution.", table_cell_style)],
-        [Paragraph("Customer waits for support.", table_cell_bold), Paragraph("Assistant provides immediate line diagnostics & grounded SOP troubleshooting.", table_cell_style)],
-        [Paragraph("Ticket status is opaque.", table_cell_bold), Paragraph("Customer has live status, assigned team, SLA countdown and full history.", table_cell_style)],
-        [Paragraph("Agent marks resolved unilaterally.", table_cell_bold), Paragraph("Customer explicitly confirms resolution (confirm-to-close loop); rejected fixes reopen.", table_cell_style)],
-        [Paragraph("CSV/dataset is primary data source.", table_cell_bold), Paragraph("Database is dynamic SQLite; CSV is only a seed/analysis source.", table_cell_style)],
-        [Paragraph("Dashboard is mainly passive reporting.", table_cell_bold), Paragraph("Dashboard is an operational control plane with LangGraph AI Assistant.", table_cell_style)],
-        [Paragraph("Outages discovered after many calls.", table_cell_bold), Paragraph("Complaint spikes trigger real-time anomaly alerts & root-cause dossiers.", table_cell_style)],
-        [Paragraph("Generic AI chatbot.", table_cell_bold), Paragraph("Controlled LangGraph multi-task orchestrator connected to real APIs.", table_cell_style)],
+        [Paragraph("Passive ticketing", table_cell_bold), Paragraph("Admin control plane with live queue, assignments, SLA and resolution actions.", table_cell_style)],
+        [Paragraph("Fragmented reporting", table_cell_bold), Paragraph("Unified operational intelligence across complaints, incidents, heatmaps and analytics.", table_cell_style)],
+        [Paragraph("Manual investigation", table_cell_bold), Paragraph("Admin AI Assistant combines live DB context, SOP retrieval and evidence synthesis.", table_cell_style)],
+        [Paragraph("Outages discovered late", table_cell_bold), Paragraph("Complaint spikes trigger anomaly alerts, incident records and root-cause dossiers.", table_cell_style)],
+        [Paragraph("No governance layer", table_cell_bold), Paragraph("Role-based access, controlled actions, immutable audit logs and notification approval.", table_cell_style)],
+        [Paragraph("Customer status is opaque", table_cell_bold), Paragraph("Admin updates flow to the customer text channel with live authoritative state.", table_cell_style)],
+        [Paragraph("Dataset-driven operation", table_cell_bold), Paragraph("SQLite is the dynamic operational source; CSV is seed/analysis data only.", table_cell_style)],
+        [Paragraph("Generic AI chatbot", table_cell_bold), Paragraph("Controlled LangGraph multi-task agents connected to authorized backend functions.", table_cell_style)],
     ]
     story.append(make_table(diff_data, [230, 274]))
     story.append(Spacer(1, 6))
 
     story.append(Paragraph("21.1 Final Product Definition", h2_style))
     story.append(Paragraph(
-        "<b>A customer-first AI complaint resolution platform that combines conversational support, dynamic network "
-        "diagnostics, automated troubleshooting, live ticket management, customer verification and resolution confirmation "
-        "with telecom operational intelligence such as classification, sentiment, escalation prediction, duplicate detection, "
-        "geographic heatmaps, complaint spike detection, AI-assisted root-cause analysis and proactive incident notification.</b>", body_style))
+        "<b>An admin-oriented telecom complaint intelligence and automated resolution platform that gives support and network operations "
+        "teams a unified control plane for complaint triage, ticket management, incident detection, heatmaps, root-cause analysis, AI decision "
+        "support, proactive notifications and auditability, while a connected customer text assistant provides diagnostics, troubleshooting, status "
+        "tracking and explicit resolution confirmation.</b>", body_style))
     story.append(PageBreak())
 
     # ================= PAGE 23 =================
     story.append(Paragraph("22. Recommended Presentation Flow", h1_style))
     pres_data = [
-        [Paragraph("Scene", table_header_style), Paragraph("Demonstration", table_header_style), Paragraph("Message to Judges", table_header_style)],
-        [Paragraph("Customer problem", table_cell_bold), Paragraph("Customer reports telecom issue in Hindi/Hinglish.", table_cell_style), Paragraph("AI understands intent in any language.", table_cell_style)],
-        [Paragraph("Line diagnostic", table_cell_bold), Paragraph("Customer triggers on-demand speed test.", table_cell_style), Paragraph("Real-time network telemetry inside chat.", table_cell_style)],
-        [Paragraph("Intelligence", table_cell_bold), Paragraph("Assistant detects category, sentiment, urgency.", table_cell_style), Paragraph("Complaint intelligence happens immediately.", table_cell_style)],
-        [Paragraph("Resolution", table_cell_bold), Paragraph("RAG provides troubleshooting or incident info.", table_cell_style), Paragraph("AI tries to solve before escalating.", table_cell_style)],
-        [Paragraph("Ticket", table_cell_bold), Paragraph("Unresolved case becomes structured P1-P4 ticket.", table_cell_style), Paragraph("No complaint is lost.", table_cell_style)],
-        [Paragraph("Tracking", table_cell_bold), Paragraph("Customer asks for status later.", table_cell_style), Paragraph("Live dynamic backend single source of truth.", table_cell_style)],
-        [Paragraph("Confirmation", table_cell_bold), Paragraph("Customer accepts (Yes ✓) or rejects fix.", table_cell_style), Paragraph("Closed-loop customer experience.", table_cell_style)],
-        [Paragraph("Admin Cockpit", table_cell_bold), Paragraph("Support team sees and operates the same ticket.", table_cell_style), Paragraph("Zero data drift across surfaces.", table_cell_style)],
-        [Paragraph("Mass issue", table_cell_bold), Paragraph("Complaint spike appears on Leaflet heatmap.", table_cell_style), Paragraph("System sees network patterns.", table_cell_style)],
-        [Paragraph("Root cause", table_cell_bold), Paragraph("AI provides evidence-backed dossier (92%).", table_cell_style), Paragraph("Actionable explainable intelligence.", table_cell_style)],
-        [Paragraph("Proactive alert", table_cell_bold), Paragraph("Notification is approved for affected users.", table_cell_style), Paragraph("Human-in-the-loop reduces duplicates.", table_cell_style)],
-        [Paragraph("Ops AI Assistant", table_cell_bold), Paragraph("Admin queries NOC operations agent.", table_cell_style), Paragraph("Executive decision support cockpit.", table_cell_style)],
+        [Paragraph("Scene", table_header_style), Paragraph("Admin-Led Demonstration", table_header_style), Paragraph("Message to Judges", table_header_style)],
+        [Paragraph("Admin overview", table_cell_bold), Paragraph("Open dashboard with queue, SLA risk, incidents and trends.", table_cell_style), Paragraph("TelConnect starts with operational visibility.", table_cell_style)],
+        [Paragraph("Complaint intelligence", table_cell_bold), Paragraph("Open a complaint and show category, sentiment, urgency, priority and escalation risk.", table_cell_style), Paragraph("The system turns raw complaints into actionable intelligence.", table_cell_style)],
+        [Paragraph("Incident / heatmap", table_cell_bold), Paragraph("Inspect a spike and drill into region, service and affected complaints.", table_cell_style), Paragraph("Operations can detect service-wide issues early.", table_cell_style)],
+        [Paragraph("Admin AI Assistant", table_cell_bold), Paragraph("Ask why the spike is occurring and retrieve SOP/evidence.", table_cell_style), Paragraph("AI supports decisions without bypassing authorization.", table_cell_style)],
+        [Paragraph("Ticket action", table_cell_bold), Paragraph("Assign, update, escalate or propose resolution from the dashboard.", table_cell_style), Paragraph("The admin remains in control of operational actions.", table_cell_style)],
+        [Paragraph("Customer confirmation", table_cell_bold), Paragraph("Customer accepts/rejects the fix; dashboard reflects the outcome.", table_cell_style), Paragraph("Closed-loop resolution prevents silent closure.", table_cell_style)],
+        [Paragraph("Notification", table_cell_bold), Paragraph("Admin reviews and approves a proactive incident notification.", table_cell_style), Paragraph("Human-in-the-loop reduces false-positive broadcasts.", table_cell_style)],
+        [Paragraph("Audit", table_cell_bold), Paragraph("Show status/action history.", table_cell_style), Paragraph("Every privileged action is traceable.", table_cell_style)],
+        [Paragraph("Customer channel", table_cell_bold), Paragraph("Briefly demonstrate text chat, diagnostics and live status.", table_cell_style), Paragraph("The customer experience is the service channel, not the operational control plane.", table_cell_style)],
     ]
     story.append(make_table(pres_data, [95, 205, 204]))
     story.append(Spacer(1, 6))
 
     story.append(Paragraph("23. Requirements Traceability to Use Case 13", h1_style))
     req_map = [
-        [Paragraph("Use Case Requirement", table_header_style), Paragraph("PRD Implementation Details", table_header_style)],
-        [Paragraph("Classify complaint categories", table_cell_bold), Paragraph("TF-IDF + Logistic Regression (Macro-F1 >= 82.4%).", table_cell_style)],
-        [Paragraph("Detect customer sentiment", table_cell_bold), Paragraph("Sentiment Analysis & negative urgency weighting.", table_cell_style)],
+        [Paragraph("Use Case Requirement", table_header_style), Paragraph("PRD Implementation", table_header_style)],
         [Paragraph("Prioritize critical complaints", table_cell_bold), Paragraph("Multi-Factor Priority Scoring + Admin Queue + SLA deadlines.", table_cell_style)],
-        [Paragraph("Predict escalation risk", table_cell_bold), Paragraph("Escalation Risk model (churn & regulatory threats) + alerts.", table_cell_style)],
+        [Paragraph("Predict escalation risk", table_cell_bold), Paragraph("Escalation Risk model + alerts.", table_cell_style)],
+        [Paragraph("Detect service problems", table_cell_bold), Paragraph("Spike detection + Leaflet heatmap + Incident Management.", table_cell_style)],
         [Paragraph("Recommend resolution actions", table_cell_bold), Paragraph("ChromaDB Vector RAG + approved SOP procedures.", table_cell_style)],
-        [Paragraph("Generate ticket summaries", table_cell_bold), Paragraph("Groq LLM / template fallback summary stored with complaint.", table_cell_style)],
-        [Paragraph("Complaint triage assistant", table_cell_bold), Paragraph("LangGraph 6-node Customer Multi-Task StateGraph.", table_cell_style)],
-        [Paragraph("Vector DB / RAG", table_cell_bold), Paragraph("ChromaDB persistent vector store + SentenceTransformers.", table_cell_style)],
-        [Paragraph("Root-cause / intelligence", table_cell_bold), Paragraph("Spike detection + Leaflet heatmap + Root-Cause Investigator.", table_cell_style)],
+        [Paragraph("Complaint triage assistant", table_cell_bold), Paragraph("LangGraph customer multi-task workflow.", table_cell_style)],
         [Paragraph("Operations AI decision support", table_cell_bold), Paragraph("LangGraph Admin Operations Agent (/admin/assistant).", table_cell_style)],
-        [Paragraph("Customer experience", table_cell_bold), Paragraph("40/60 Split chat, line diagnostics, confirm-to-close loop.", table_cell_style)],
+        [Paragraph("Classify complaint categories", table_cell_bold), Paragraph("TF-IDF + Logistic Regression (Macro-F1 >= 82.4%).", table_cell_style)],
+        [Paragraph("Customer experience", table_cell_bold), Paragraph("40/60 text chat, line diagnostics, confirm-to-close loop.", table_cell_style)],
     ]
     story.append(make_table(req_map, [150, 354]))
-    story.append(Spacer(1, 6))
-
-    story.append(Paragraph("24. Conclusion & Appendix", h1_style))
-    story.append(Paragraph(
-        "This PRD defines a complete, professional product rather than a collection of disconnected AI features. "
-        "The customer assistant understands and resolves individual problems; the shared SQLite backend guarantees live "
-        "complaint state; the admin dashboard manages operations; and the intelligence layer turns complaint patterns into "
-        "proactive service insights.", body_style))
-    story.append(Paragraph(
-        "<b>The strongest demonstration of the product is therefore not 'the chatbot can answer a complaint.' It is: 'The "
-        "system understands the complaint, tries to resolve it, creates and tracks a real ticket when needed, verifies the "
-        "customer's resolution, and simultaneously learns from complaint patterns to detect and prevent larger telecom "
-        "problems.'</b>", body_style))
-    story.append(Spacer(1, 4))
-    story.append(Paragraph("<b>Appendix — Provider / API Note:</b> Groq Cloud API operates within published free-tier rate limits with OpenAI-compatible endpoints. All features include deterministic offline fallbacks ensuring 100% resilience with zero API key dependencies.", body_style))
 
     # Build PDF
     doc.build(story, canvasmaker=NumberedCanvas)
