@@ -273,7 +273,7 @@ export default function Chat() {
             className="btn ghost sm"
             onClick={() => {
               clearSession();
-              nav('/login');
+              nav('/');
             }}
           >
             Sign out
