@@ -22,6 +22,9 @@ from ..controllers import admin_assistant, auth
 from .. import analytics, assistant, db, ml, notify, seed, translator
 from ..services import etl, incidents, rag
 from ..services.groq_client import groq_available
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def startup_tasks() -> None:
     """Idempotent init: schema, demo accounts, KB, seed CSV, ML models, RAG index, scheduler."""
@@ -44,26 +47,10 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-# Allowed CORS origins: support environment variable CORS_ORIGINS or default to localhost + vercel.app
-cors_env = os.environ.get("CORS_ORIGINS", "")
-allowed_origins = [orig.strip() for orig in cors_env.split(",") if orig.strip()]
-if not allowed_origins:
-    allowed_origins = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://localhost:4173",
-    ]
-
 app = FastAPI(title="Telecom Complaint Intelligence Platform", version="1.0", lifespan=lifespan)
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app" if not any("*" in o for o in allowed_origins) else None,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 SCHEDULER_INTERVAL = int(os.environ.get("TCI_SCHEDULER_INTERVAL", "60"))
 _scheduler_started = False
@@ -539,17 +526,10 @@ async def chat_voice(file: UploadFile = File(...), language: str | None = None,
 
 
 # ---------- misc ----------
-@app.get("/")
-@app.get("/healthz")
 @app.get("/api/health")
 def health():
-    return {
-        "status": "ok",
-        "service": "TelConnect Backend",
-        "groq_live": groq_available(),
-        "ingest_done": db.get_meta("ingest_done") == "1",
-    }
-
+    return {"status": "ok", "groq_live": groq_available(),
+            "ingest_done": db.get_meta("ingest_done") == "1"}
 
 
 @app.get("/api/demo/sample-csv")
@@ -560,9 +540,4 @@ def sample_csv():
         return PlainTextResponse(f.read(), media_type="text/csv",
                                  headers={"Content-Disposition": "attachment; filename=sample_complaints.csv"})
 
-
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("app.routes.main:app", host="0.0.0.0", port=port, reload=False)
 

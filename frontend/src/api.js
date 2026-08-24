@@ -1,7 +1,4 @@
-// Dynamic API base URL: reads VITE_API_URL for production deployment on Vercel
-// Falls back to http://localhost:8000 in development
-const rawBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '');
-const BASE = rawBase.replace(/\/+$/, '');
+const BASE = 'http://localhost:8000';
 
 export function token() { return localStorage.getItem('tci_token'); }
 export function user() {
@@ -24,8 +21,7 @@ async function request(path, opts = {}) {
     headers['Content-Type'] = 'application/json';
     opts.body = JSON.stringify(opts.json);
   }
-  const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${BASE}${path}`;
-  const res = await fetch(url, { ...opts, headers });
+  const res = await fetch(BASE + path, { ...opts, headers });
   if (res.status === 401 && !path.startsWith('/api/auth/')) {
     clearSession();
     if (window.location.pathname !== '/login') {
