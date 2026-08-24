@@ -31,14 +31,11 @@ _active_model: str | None = None
 def _load_env_file() -> None:
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     root_dir = os.path.dirname(base_dir)
-    project_root = os.path.dirname(root_dir)
     for path in (
         os.path.join(base_dir, ".env"),
         os.path.join(root_dir, ".env"),
-        os.path.join(project_root, ".env"),
         os.path.join(base_dir, ".env.local"),
         os.path.join(root_dir, ".env.local"),
-        os.path.join(project_root, ".env.local"),
     ):
         if os.path.exists(path):
             with open(path) as f:
@@ -48,19 +45,14 @@ def _load_env_file() -> None:
                         k, _, v = line.partition("=")
                         k = k.strip()
                         v = v.strip().strip('"').strip("'")
-                        if v:
-                            os.environ[k] = v
+                        os.environ.setdefault(k, v)
 
 
 _load_env_file()
 
 
 def api_key() -> str | None:
-    key = os.environ.get("GROQ_API_KEY")
-    if not key:
-        _load_env_file()
-        key = os.environ.get("GROQ_API_KEY")
-    return key or None
+    return os.environ.get("GROQ_API_KEY") or None
 
 
 def groq_available() -> bool:
