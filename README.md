@@ -7,8 +7,7 @@
 
 ## Executive Summary
 
-**TelConnect** is an AI-native telecom operations and customer resolution platform that bridges customer-facing support and network operations into a unified, real-time closed loop. Built on a **100% free-tier, zero-cost stack**, it pairs an **Admin Operations Console** with an **Autonomous Customer AI Assistant** sharing a single source of truth (`tci.db`).
-
+TelConnect is an admin-oriented telecom complaint intelligence and resolution platform. The Admin Dashboard is the primary operational control plane used to manage the complaint lifecycle, investigate patterns, monitor service issues, update ticket states, manage incidents, evaluate AI recommendations and query operational intelligence. The customer assistant is the connected text-based service channel: it captures complaints, diagnostics and customer confirmation while feeding authoritative operational data into the admin workflow. The Admin Dashboard is the operations control plane used to manage the complaint lifecycle, investigate patterns, monitor service issues, update ticket states, manage incidents, evaluate AI recommendations, a
 - **See Outages Before the 200th Complaint**: An automated statistical anomaly engine monitors complaint density across regions in real time, detecting surges against rolling historical baselines and generating evidence-backed root-cause dossiers.
 - **Multilingual Autonomous Agent**: Powered by a 6-node **LangGraph StateGraph** and **Hugging Face Multilingual DistilBERT**, the assistant communicates natively in English, Hindi (Devanagari), and colloquial Hinglish transliteration with **Groq Whisper** voice input and **Web Speech** audio readout.
 - **Real-Time Line Diagnostics**: Customers can run instantaneous on-demand telemetry tests (download/upload speed, ping latency, jitter, packet loss) directly in the chat stream.
@@ -32,7 +31,7 @@ flowchart TB
     end
 
     subgraph API_Layer["2. API & Security Layer (Python FastAPI + Uvicorn)"]
-        AuthModule["JWT & Scrypt Token Authentication (Role-Gated)"]
+        AuthModule["hashlib & Scrypt Token Authentication (Role-Gated)"]
         UploadModule["Universal CSV Ingestion & Auto-Schema Mapper"]
         DiagRouter["Dynamic Line Diagnostics (/api/chat/diagnostic)"]
         ChatRouter["Customer & Admin Assistant Routers (/api/chat, /api/admin/assistant)"]
