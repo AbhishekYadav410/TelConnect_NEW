@@ -107,11 +107,11 @@ flowchart TB
 
 ## Agentic & AI Architecture
 
-### 1. Customer LangGraph Agent (6-Node Multi-Task Workflow)
+### 1. Admin/Customer LangGraph Agent (6-Node Multi-Task Workflow)
 
 ```mermaid
 flowchart TD
-    Start([Customer Text / Voice Input]) --> N1[1. translate_input<br/><i>Hugging Face DistilBERT + Lang Detection</i>]
+    Start([Admin Text/Customer text ]) --> N1[1. translate_input<br/><i>Hugging Face DistilBERT + Lang Detection</i>]
     N1 --> N2[2. route_intent<br/><i>Intent Classifier & State Continuation</i>]
     N2 --> N3[3. retrieve_context<br/><i>Active Outage Check + ChromaDB RAG</i>]
     N3 --> N4[4. execute_action<br/><i>Line Speed Diagnostics / Ticket DB Mutations</i>]
