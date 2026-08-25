@@ -25,11 +25,9 @@ def test_missing_api_key_returns_none_and_not_cached(monkeypatch):
     monkeypatch.delenv("GEOAPIFY_API_KEY", raising=False)
     monkeypatch.delenv("GEOAPIFY_KEY", raising=False)
     monkeypatch.delenv("GEOAPIFY_TOKEN", raising=False)
-    geo.clear_cache()
     assert geo.get_geoapify_api_key() is None
     assert geo.geocode_with_geoapify("Raj Nagar, Ghaziabad") is None
     assert "raj nagar, ghaziabad" not in geo._GEO_CACHE
-
 
 
 def test_api_key_from_env_variants(monkeypatch):

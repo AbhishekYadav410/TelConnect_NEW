@@ -127,7 +127,7 @@ def geocode_with_geoapify(
     if cache_key in _GEO_CACHE:
         return _GEO_CACHE[cache_key]
 
-    key = api_key if api_key is not None else get_geoapify_api_key()
+    key = api_key or get_geoapify_api_key() or GEOAPIFY_API_KEY
     if not key:
         logger.warning(
             "GEOAPIFY_API_KEY is not set. Cannot geocode region %r via Geoapify.",

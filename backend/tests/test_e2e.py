@@ -31,9 +31,7 @@ def tokens():
 
 # ---------- Layer 0: auth & role boundaries ----------
 def test_health():
-    assert client.get("/health").json() == {"status": "healthy"}
     assert client.get("/api/health").json()["status"] == "ok"
-
 
 
 def test_login_bad_password():

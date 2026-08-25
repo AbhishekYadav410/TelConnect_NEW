@@ -1,5 +1,5 @@
-
 # TelConnect — Telecom Complaint Intelligence & Automated Resolution Assistant
+
 
 > **AI Platform for Telecom Network Intelligence, Proactive Outage Detection & Closed-Loop Autonomous Customer Resolution**  
 > *Built to PRD v7.0 (Cognizant Hackathon — Use Case 13)*
