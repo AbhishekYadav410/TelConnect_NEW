@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { user } from './api.js';
 import { ThemeProvider } from './ThemeContext.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
+import WakingBanner from './components/WakingBanner.jsx';
 import Landing from './pages/Landing.jsx';
 import Login from './pages/Login.jsx';
 import AdminLayout from './pages/AdminLayout.jsx';
@@ -44,7 +45,9 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <WakingBanner />
       <ThemeToggle />
     </ThemeProvider>
   );
 }
+

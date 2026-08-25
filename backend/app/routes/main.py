@@ -59,7 +59,7 @@ app = FastAPI(title="Telecom Complaint Intelligence Platform", version="1.0", li
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app" if not any("*" in o for o in allowed_origins) else None,
+    allow_origin_regex=r"https://.*(\.vercel\.app|\.hf\.space)" if not any("*" in o for o in allowed_origins) else None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -539,6 +539,11 @@ async def chat_voice(file: UploadFile = File(...), language: str | None = None,
 
 
 # ---------- misc ----------
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
+
+
 @app.get("/")
 @app.get("/healthz")
 @app.get("/api/health")
@@ -549,6 +554,7 @@ def health():
         "groq_live": groq_available(),
         "ingest_done": db.get_meta("ingest_done") == "1",
     }
+
 
 
 
@@ -563,6 +569,7 @@ def sample_csv():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 7860))
     uvicorn.run("app.routes.main:app", host="0.0.0.0", port=port, reload=False)
+
 

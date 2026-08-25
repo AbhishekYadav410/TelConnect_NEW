@@ -1,3 +1,13 @@
+---
+title: TelConnect Backend
+emoji: 📡
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # TelConnect — Telecom Complaint Intelligence & Automated Resolution Assistant
 
 > **AI Platform for Telecom Network Intelligence, Proactive Outage Detection & Closed-Loop Autonomous Customer Resolution**  
