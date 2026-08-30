@@ -149,9 +149,19 @@ def add_documents_to_chroma(documents: list[dict]) -> int:
         return 0
 
 
-def rebuild_index() -> int:
+def rebuild_index(force: bool = False) -> int:
     """Index SOP/FAQ docs + incident write-ups + a sample of resolved tickets into ChromaDB."""
     try:
+        if not force:
+            try:
+                coll = get_collection()
+                count = coll.count()
+                if count > 0:
+                    logger.info(f"[RAG] ChromaDB index already populated ({count} documents). Skipping redundant rebuild.")
+                    return count
+            except Exception:
+                pass
+
         conn = db.connect()
         docs = [dict(r) for r in conn.execute(
             "SELECT doc_id, kind, title, body, category FROM kb_docs")]
@@ -175,6 +185,7 @@ def rebuild_index() -> int:
     except Exception as exc:
         logger.error(f"[RAG] Failed to rebuild index: {exc}", exc_info=True)
         return 0
+
 
 
 def retrieve(query: str, top_k: int = TOP_K, kinds: tuple | None = None) -> list[dict]:

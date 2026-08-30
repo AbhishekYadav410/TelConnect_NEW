@@ -77,8 +77,9 @@ def pipeline_cycle() -> dict:
     inc = incidents.run_cycle()
     drafted = notify.run_cycle()
     if scored:
-        rag.rebuild_index()
+        rag.rebuild_index(force=True)
     return {"scored": scored, **inc, "notifications_drafted": drafted}
+
 
 
 def _scheduler_loop():
