@@ -21,6 +21,7 @@ from ..services.etl import DEVANAGARI_RE, clean_text
 from ..services import rag
 from ..services.groq_client import groq_available, groq_chat_messages
 from ..services.notify import notify_customer_event
+from ..services.telecom_filter import is_telecom_related, TELECOM_RESTRICTION_MESSAGE
 from ..services.translator import detect_language, to_english_semantics, translate_text
 
 # Regex patterns for fast intent identification
@@ -618,9 +619,29 @@ def node_execute_action(state: AgentState) -> dict:
         fallback = "You're very welcome! I'm always here to help. Let me know if anything else comes up."
 
     else:
-        meta.update(path="chitchat", suggestions=["Report an issue", "Run speed test", "Check ticket status", "Billing help"])
-        facts = f"General query from customer: {raw}. Provide helpful, friendly telecom customer support guidance."
-        fallback = "I'm here to help with network, broadband, billing, speed tests, or ticket tracking. What can I do for you?"
+        meta.update(path="general_query", suggestions=["Report an issue", "Run speed test", "Check ticket status", "Billing help"])
+        facts = f"Customer asked telecom question: {raw}. Provide helpful, accurate, and concise telecom explanation or customer support guidance."
+        t_low = text.lower()
+        if "5g" in t_low and ("what is" in t_low or "difference" in t_low or "explain" in t_low or len(t_low) < 20):
+            fallback = "5G (Fifth Generation) is the latest cellular network standard providing ultra-high data speeds, low latency, and massive device connectivity compared to 4G."
+        elif "4g" in t_low and ("what is" in t_low or "explain" in t_low or len(t_low) < 20):
+            fallback = "4G (Fourth Generation / LTE) is a high-speed mobile broadband standard designed for fast mobile internet, video streaming, and clear voice calling (VoLTE)."
+        elif "volte" in t_low:
+            fallback = "VoLTE (Voice over LTE) enables high-definition voice calls over 4G data networks without dropping network speed or interrupting data sessions."
+        elif "vowifi" in t_low:
+            fallback = "VoWiFi (Voice over Wi-Fi) allows you to make and receive high-quality voice and video calls using a Wi-Fi connection even in areas with weak cellular signal."
+        elif "esim" in t_low:
+            fallback = "An eSIM (embedded SIM) is a digital SIM built directly into your phone that allows you to activate a cellular plan without needing a physical nano-SIM card."
+        elif "sim card" in t_low or "what is a sim" in t_low:
+            fallback = "A SIM (Subscriber Identity Module) card is a smart card inside your mobile phone that securely stores your network identity, phone number, and authentication key."
+        elif "apn" in t_low:
+            fallback = "An APN (Access Point Name) is the gateway setting that configures your device to connect to your telecom operator's mobile internet and MMS network."
+        elif "roaming" in t_low:
+            fallback = "Roaming allows your mobile phone to connect to partner cellular networks when traveling outside your home coverage circle or internationally."
+        elif "network coverage" in t_low or "coverage" in t_low:
+            fallback = "Network coverage refers to the geographical area where a cellular service provider's signal is available for calls, SMS, and mobile data."
+        else:
+            fallback = "I'm here to help with network, broadband, billing, speed tests, or ticket tracking. What can I do for you?"
 
     return {
         "action_data": action_data,
@@ -645,6 +666,8 @@ def node_synthesize_response(state: AgentState) -> dict:
 
     system_prompt = (
         "You are the official AI Customer Support Assistant for a premier telecom provider (TelConnect).\n"
+        "You are a telecom-focused assistant. Answer only questions related to telecommunications and telecom services. "
+        "If a user's question is unrelated to telecommunications, do not answer the question. Politely explain that you can only assist with telecom-related topics.\n\n"
         "Your mission is to be empathetic, professional, proactive, and natural.\n\n"
         "STRICT GROUNDING RULES:\n"
         "1. Answer ONLY using the provided VERIFIED FACTS. Never invent fake ticket IDs, fake numbers, or imaginary promises.\n"
@@ -718,8 +741,27 @@ def get_agent_graph():
 
 def run_agent_graph(user: dict, text: str, preferred_language: Optional[str] = None) -> dict:
     """Entrypoint to run the multi-task LangGraph agent."""
-    app = get_agent_graph()
     conv_state = db.get_conv_state(user["user_id"])
+    norm_en, _ = to_english_semantics(text)
+    detected = detect_language(text)
+    effective_lang = preferred_language if preferred_language in ("en", "hi") else detected
+
+    if not is_telecom_related(text, conversation_state=conv_state, is_admin=False, normalized_text=norm_en):
+        reply_msg = TELECOM_RESTRICTION_MESSAGE
+        if effective_lang == "hi":
+            reply_msg = "मैं केवल दूरसंचार (टेलीकॉम) से संबंधित प्रश्नों के उत्तर देने के लिए डिज़ाइन किया गया हूँ। कृपया मुझसे मोबाइल नेटवर्क, सिम/eSIM, 4G/5G, कॉल, एसएमएस, मोबाइल डेटा, रोमिंग, रिचार्ज प्लान, कनेक्टिविटी या अन्य टेलीकॉम सेवाओं के बारे में पूछें।"
+        return {
+            "reply": reply_msg,
+            "meta": {
+                "language": effective_lang,
+                "intent": "RESTRICTED_NON_TELECOM",
+                "path": "restricted_non_telecom",
+                "suggestions": ["Mobile network help", "SIM / eSIM queries", "Recharge plans & billing", "Speed diagnostic"],
+            },
+            "steps": ["input_translated", "telecom_domain_check"],
+        }
+
+    app = get_agent_graph()
     pending = _pending_confirmation_ticket(user["user_id"])
 
     initial_state: AgentState = {

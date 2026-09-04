@@ -14,6 +14,7 @@ from langgraph.graph import END, START, StateGraph
 
 from ..controllers import admin_assistant
 from ..services.groq_client import groq_available, groq_chat_messages
+from ..services.telecom_filter import is_telecom_related, TELECOM_RESTRICTION_MESSAGE
 
 logger = logging.getLogger(__name__)
 
@@ -124,13 +125,22 @@ def node_generate_response(state: AdminAgentState) -> dict:
 
             system_prompt = (
                 "You are the Telecom Operations AI Assistant for TelConnect Network Operations Center (NOC) and Support Admins.\n"
-                "Provide executive, concise, and structured operational intelligence grounded STRICTLY in the provided platform data.\n\n"
+                "You are a telecom-focused assistant. Answer only questions related to telecommunications and telecom services. "
+                "If a user's question is unrelated to telecommunications, do not answer the question. Politely explain that you can only assist with telecom-related topics.\n\n"
+                "Provide executive, direct, concise, and structured operational intelligence grounded STRICTLY in the provided platform data.\n\n"
                 "CRITICAL OPERATIONAL RULES:\n"
-                "1. Base all complaint counts, incident statuses, SLA breaches, root causes, and ticket IDs ONLY on the provided Live Database Snapshot.\n"
-                "2. Never fabricate ticket numbers, statistics, or metrics not in the data.\n"
-                "3. For resolution steps, troubleshooting, or recommended actions, synthesize the ChromaDB SOPs and past incident writeups.\n"
-                "4. Format responses cleanly with Markdown headers (###), bullet points, and bold text for key metrics.\n"
-                "5. When explaining category classification reasoning, always structure as:\n"
+                "1. Direct Answer: Answer the admin's specific question directly:\n"
+                "   - If asked for the region with least / fewest / lowest complaints, state the lowest-volume region(s) with their exact complaint count from the Lowest Regions data.\n"
+                "   - If asked how many complaints are in a specific region (e.g. Raj Nagar, Delhi, Ghaziabad), state the exact total and open complaint count for that region from Targeted Entity / Region Details.\n"
+                "   - If asked for the most recurring complaints / themes, state the top recurring themes and counts.\n"
+                "   - If asked for count of internet / network / billing / service complaints, provide the exact numbers from Category Breakdown.\n"
+                "   - If asked for highest complaint region or regional breakdown, state the top regions from Top Regional Hotspots.\n"
+                "   - If asked for overall metrics or general summary, provide direct figures and an executive briefing.\n"
+                "2. Base all complaint counts, category metrics, recurring themes, incident statuses, SLA breaches, root causes, and ticket IDs ONLY on the provided Live Database Snapshot.\n"
+                "3. Never fabricate ticket numbers, statistics, or metrics not present in the data.\n"
+                "4. For resolution steps, troubleshooting, or recommended actions, synthesize the ChromaDB SOPs and past incident writeups.\n"
+                "5. Format responses cleanly with Markdown headers (###), bullet points, and bold text for key metrics.\n"
+                "6. When explaining category classification reasoning, always structure as:\n"
                 "   Primary Category: <Category>\n\n"
                 "   Evidence:\n"
                 "   - <evidence token 1>\n"
@@ -140,18 +150,26 @@ def node_generate_response(state: AdminAgentState) -> dict:
                 "   - <Related Category 2>"
             )
 
+            recurring_themes_summary = snapshot.get("recurring_themes", [])[:8]
+            services_summary = snapshot.get("services_breakdown", [])[:6]
+            recurring_summaries_list = snapshot.get("recurring_summaries", [])[:5]
+
             user_context = (
                 f"ADMIN QUESTION: {query}\n\n"
                 f"LIVE DATABASE SNAPSHOT:\n"
                 f"• Total Complaints: {stats.get('total')}, Open: {stats.get('open')}, In Progress: {stats.get('in_progress')}, Closed: {stats.get('closed')}\n"
                 f"• SLA Breaches: {stats.get('sla_breaches')}, Escalated: {stats.get('escalated')}\n"
-                f"• Category Counts: {json.dumps(snapshot.get('categories', []))}\n"
+                f"• Category Breakdown: {json.dumps(snapshot.get('categories', []))}\n"
+                f"• Service Types Breakdown: {json.dumps(services_summary)}\n"
+                f"• Top Recurring Complaint Themes: {json.dumps(recurring_themes_summary)}\n"
+                f"• Common Complaint Summaries: {json.dumps(recurring_summaries_list)}\n"
                 f"• Active Incidents: {json.dumps(active_inc_summary)}\n"
                 f"• Top Immediate Priority Tickets: {json.dumps(immediate_summary)}\n"
-                f"• Regional Hotspots: {json.dumps(snapshot.get('regional_counts', []))}\n"
+                f"• Top Regional Hotspots (Highest Volume): {json.dumps(snapshot.get('regional_counts', []))}\n"
+                f"• Lowest Regions (Fewest Complaints): {json.dumps(snapshot.get('regional_counts_lowest', []))}\n"
             )
             if snapshot.get("target_info"):
-                user_context += f"• Targeted Entity Info: {json.dumps(snapshot['target_info'])}\n"
+                user_context += f"• Targeted Entity / Region Details / Matches: {json.dumps(snapshot['target_info'])}\n"
 
             if rag_context_text:
                 user_context += f"\nRETRIEVED SOPs & RESOLUTION KNOWLEDGE (ChromaDB):\n{rag_context_text}\n"
@@ -221,6 +239,19 @@ def get_admin_agent_graph():
 
 def run_admin_agent(admin_user: dict, text: str) -> dict:
     """Execute the LangGraph Admin Agent workflow for an admin query."""
+    if not is_telecom_related(text, is_admin=True):
+        return {
+            "reply": TELECOM_RESTRICTION_MESSAGE,
+            "meta": {
+                "intent": "RESTRICTED_NON_TELECOM",
+                "source": "domain_filter",
+                "groq_live": groq_available(),
+                "retrieved_docs_count": 0,
+                "docs": [],
+            },
+            "steps": ["telecom_domain_check"],
+        }
+
     app = get_admin_agent_graph()
 
     initial_state: AdminAgentState = {

@@ -1,602 +1,665 @@
-# PRODUCT REQUIREMENTS DOCUMENT
+# Product Requirements Document (PRD v7.0)
 
-# Telecom Complaint Intelligence & Automated Resolution Assistant
-**Professional, admin-oriented product specification**  
+# Telecom Complaint Intelligence & Automated Resolution Assistant (TelConnect)
+**Professional, Customer-First Product Specification & Technical Architecture**  
 *Cognizant Hackathon • Use Case 13*
 
 ---
 
 ## Document Specification
 
-| Document | Specification |
+| Specification | Details |
 | :--- | :--- |
-| **Version** | 10.0 — Admin-Oriented Multi-Task Agent & Text-Only Intelligence PRD |
-| **Product Type** | AI-powered telecom complaint intelligence and automated resolution platform |
-| **Primary User** | Support / Operations Admin teams |
-| **Secondary User** | Telecom customers |
-| **Admin Assistant UI** | Admin Operations Dashboard + Admin AI Assistant |
-| **Agent Orchestration** | LangGraph Multi-Task StateGraph (customer workflow + admin operations agent) |
-| **Multilingual Engine** | Hugging Face DistilBERT (multilingual-cased) + Groq translation + rule fallback |
-| **Primary AI Provider** | Groq API (Llama models) with deterministic offline fallbacks |
-| **Customer Interaction** | Text-based conversational assistant |
-| **Core Data Store** | SQLite (tci.db with WAL mode, foreign keys, immutable audit logs) |
-| **Knowledge Store** | ChromaDB persistent vector store + Sentence Transformers (all-MiniLM-L6-v2) |
-| **Geolocation Engine** | Geoapify Geocoding API with caching and India boundary validation |
-| **Core Backend** | Python + FastAPI + Uvicorn |
-| **UI** | Admin Operations Dashboard + Admin AI Assistant + Customer Assistant (40/60 Split) + Theme Engine (Dark/Light) |
+| **Document Version** | **7.0 — Autonomous Multi-Task Agent & Multilingual Intelligence PRD** |
+| **Product Name** | **TelConnect** (Telecom Complaint Intelligence & Automated Resolution Assistant) |
+| **Product Type** | AI-powered telecom complaint intelligence, autonomous resolution & network operations platform |
+| **Primary User** | Telecom Customer (Mobile Data, Broadband, Fiber, Landline) |
+| **Operational User** | Support Team, Field Operations, RF Engineers, Network Ops & Admin Teams |
+| **Agent Orchestration** | **LangGraph Multi-Task StateGraph** (6-node customer agent & 4-node admin operations agent) |
+| **Multilingual Engine** | **Hugging Face DistilBERT** (`distilbert/distilbert-base-multilingual-cased`) + Groq Zero-Shot Neural Translation + Lexical Domain Fallback |
+| **Primary AI Provider** | **Groq Cloud API** (Llama-3 models + Whisper voice STT) with complete deterministic offline fallback |
+| **Voice Stack** | **Groq Whisper** (Multilingual STT) + **Web Speech API** (Bilingual TTS audio readout) |
+| **Operational Database** | **SQLite 3** (`tci.db` with WAL mode, foreign keys, and immutable audit logs) |
+| **Knowledge Store** | **ChromaDB** persistent vector database + **Sentence Transformers** (`all-MiniLM-L6-v2` dense embeddings) |
+| **Geolocation Engine** | **Geoapify Geocoding API** (dynamic in-memory cache & coordinate boundary validation) |
+| **Core Backend** | **Python 3.10+ + FastAPI + Uvicorn** |
+| **Frontend UI** | **React 18/19 (Vite SPA)** with 40/60 Split Layout, Leaflet Regional Heatmap, Recharts & Theme Engine (Dark/Light) |
+| **Test Coverage** | **106+ Automated Tests Passing** in `backend/tests/` |
 
-### Product Vision
-Give telecom operations teams a single intelligence and control plane to monitor complaints, manage tickets, investigate incidents, use AI-assisted recommendations, detect service-wide patterns, approve proactive actions, and verify that customer-facing resolution outcomes are achieved.
+> **Product Vision**: Turn telecom complaints from isolated, opaque support tickets into an autonomous, closed-loop intelligence system that understands customer intent in any language, performs dynamic network line diagnostics, provides grounded RAG troubleshooting, tracks live ticket states transparently, detects geographic complaint spikes in real time, generates evidence-backed root-cause dossiers, and proactively prevents recurring complaints.
 
-The customer assistant remains the connected service channel, while the product is positioned around the admin control plane: operational visibility, queue management, incident intelligence, auditability and AI decision support.
+This PRD preserves and elevates the capabilities of Use Case 13 — complaint classification, sentiment detection, escalation prediction, vector RAG, root-cause analysis, geographic heatmaps, spike detection, and proactive notification — while restructuring them around an end-to-end customer complaint-to-resolution journey and modern agentic architectures.
 
 ---
 
 ## 1. Product Overview
 
-TelConnect is an admin-oriented telecom complaint intelligence and resolution platform. The Admin Dashboard is the primary operational control plane used to manage the complaint lifecycle, investigate patterns, monitor service issues, update ticket states, manage incidents, evaluate AI recommendations and query operational intelligence.
+The **Telecom Complaint Intelligence & Automated Resolution Assistant (TelConnect)** is a customer-facing conversational AI service paired with an operational support and network intelligence control plane.
 
-The customer assistant is the connected text-based service channel: it captures complaints, diagnostics and customer confirmation while feeding authoritative operational data into the admin workflow.
+The platform accepts customer complaints via text or voice, auto-normalizes language across English, Hindi (Devanagari), and Hinglish transliteration, performs instant network line diagnostics, checks for active geo-incidents, retrieves approved troubleshooting standard operating procedures (SOPs), registers and prioritizes tickets with transparent factor scoring, and verifies resolution satisfaction before ticket closure.
+
+The **Admin Operations Console** is the operations control plane used to manage the complaint lifecycle, triage priority-ranked queues, inspect Leaflet geographic heatmaps, investigate automated root-cause hypotheses, approve proactive broadcast notifications, evaluate AI recommendations via the **Admin AI Assistant**, and audit system actions.
 
 ### 1.1 Product Principles
 
-- **Admin first:** The primary workflow starts with operational visibility and ends with a controlled, auditable action or verified outcome.
-- **Operational control:** Admins manage queues, tickets, assignments, incidents, alerts, notifications and resolution actions from one dashboard.
-- **AI-assisted decisions:** The Admin AI Assistant provides evidence, SOP knowledge, live database context and explainable recommendations; privileged actions remain backend-controlled.
-- **Customer outcome:** Admin actions are measured by whether complaints are resolved, tracked and confirmed by the customer.
-- **One source of truth:** Admin dashboard and customer assistant use the same backend and SQLite operational database.
-- **Dynamic by design:** Runtime complaints, assignments and incidents are database-driven; seed CSV data is not the live source of truth.
-- **Closed loop:** Resolution is not final until the customer confirms it; rejected fixes reopen or escalate.
-- **Explainable and auditable:** Priority, escalation, root-cause and AI recommendations expose evidence, while privileged actions are logged.
-- **Zero-cost and offline resilient:** Core ticket/status operations remain usable with deterministic fallbacks when external AI services are unavailable.
+1. **Customer First**: The primary workflow begins with the customer's problem and concludes *only* when the customer confirms the resolution or explicitly rates the interaction.
+2. **One Source of Truth**: The customer assistant and admin console read and write to the same operational database (`tci.db`), guaranteeing zero data drift and zero stale LLM hallucinations.
+3. **AI with Controlled Actions**: The LLM interprets, synthesizes language, and provides contextual empathy. All privileged operations (ticket creation, status transitions, line testing, broadcast approvals) are strictly executed by deterministic backend APIs.
+4. **Dynamic by Design**: Complaints can be created by customers, admins, or authorized data feeds; the system operates on a live SQLite database rather than static CSV data.
+5. **Closed Loop**: A proposed resolution requires customer confirmation before an eligible complaint is closed. Rejection automatically reopens and escalates the ticket.
+6. **Explainable Intelligence**: Classification, priority scoring, escalation risk, and root-cause outputs expose their underlying evidence, mathematical weights, and contributing factor chips rather than opaque numbers.
+7. **Zero-Cost & Offline Resilient**: Architected to operate within free-tier limits (Groq Free API, Geoapify Free Plan) with immediate deterministic fallbacks for 100% offline functionality.
 
 ### 1.2 Problem Statement
 
-Telecom operators receive large complaint volumes across network, broadband, billing and service issues. Manual triage, fragmented ticket handling and delayed outage recognition make it difficult for operations teams to understand what is happening, which customers are affected, what should be done next and whether the customer was actually helped.
+Telecom operators receive large volumes of complaints related to network outages, call drops, broadband slowdowns, billing disputes, and device configurations. Manual triage is slow, customers lack visibility into ticket progress, and network operations teams often discover mass outages only after hundreds of repetitive complaints overwhelm call centers.
+
+The product solves two connected problems:
+1. **Helps individual customers reach a verified resolution faster** through intelligent triage, instant line diagnostics, grounded RAG self-service, and transparent status tracking.
+2. **Converts complaint data into operational network intelligence** that helps telecom operators detect geographic surges, investigate evidence-backed root causes, and proactively alert affected subscribers before complaints escalate.
 
 ---
 
-## 2. Objectives
+## 2. Objectives & Success Criteria
 
-| Admin Objective | Expected Operational Outcome |
+### 2.1 Objectives
+
+| Objective | Expected Outcome |
 | :--- | :--- |
-| **Operational overview** | Monitor complaint volume, open tickets, priorities, SLA risk, incidents and trends from one control plane. |
-| **Queue & ticket efficiency** | Search, filter, assign, update, escalate and resolve complaints with full status history. |
-| **Incident intelligence** | Detect spikes, link complaints to incidents and investigate service-wide impact. |
-| **AI decision support** | Use the Admin AI Assistant with live DB snapshots, ChromaDB SOPs and explainable recommendations. |
-| **Root-cause investigation** | Combine complaint patterns, geography, history and knowledge evidence into actionable hypotheses. |
-| **Proactive operations** | Review and approve customer notifications for confirmed incidents and meaningful ticket events. |
-| **Audit & governance** | Keep privileged actions, assignments, status changes and notification decisions traceable. |
-| **Customer resolution outcome** | Ensure the operational workflow ultimately produces verified customer resolution or proper escalation. |
-| **Customer-facing assistance** | Provide text chat, diagnostics, troubleshooting, ticket tracking and confirmation as the service channel. |
+| **Automate Complaint Understanding** | Classify intent, category, subcategory, extract entities, and detect sentiment, urgency, and escalation risk using machine learning. |
+| **Instant Line & Speed Diagnostics** | Provide on-demand network telemetry tests (download/upload speed, ping latency, jitter, packet loss) directly inside the customer chat. |
+| **Improve First-Contact Resolution (FCR)** | Intercept known issues via active incident checks and grounded RAG troubleshooting before escalating to human support. |
+| **Create a Complete Complaint Lifecycle** | Support two-phase verification, ticket creation, team assignment, status updates, resolution proposal, customer confirmation, reopening, and escalation. |
+| **Give Customers Live Visibility** | Allow authenticated customers to query ticket status, assigned team, SLA deadlines, and status history from the assistant. |
+| **Reduce Duplicate Complaints** | Match incoming complaints against active regional incidents and link reports without creating duplicate tickets. |
+| **Detect Mass Service Problems** | Group complaints by region and service, detecting abnormal volume surges against rolling historical baselines. |
+| **Support Root-Cause Investigation** | Correlate temporal, spatial, and symptom concentrations to generate explainable incident dossiers with confidence bars and evidence bullets. |
+| **Proactively Inform Customers** | Draft and review broadcast notifications for affected customers before they file repeated complaints. |
+| **Equip NOC with Operations AI** | Provide an autonomous LangGraph decision support agent for NOC admins to query critical complaints, escalation risks, and ChromaDB SOPs. |
+| **Improve Operational Efficiency** | Provide an admin dashboard for queue management, heatmap monitoring, incident operations, analytics, and CSV data export. |
 
-### 2.1 Success Criteria
+### 2.2 Success Criteria
 
-- Admin can see complaint volume, priority, category, sentiment, escalation risk, geographic spikes, incidents and SLA information.
-- Admin can assign, update, escalate and resolve tickets while preserving immutable status history.
-- Admin can investigate a spike and obtain evidence-backed root-cause signals.
-- Admin can use the Operations AI Assistant for complex operational queries without unrestricted database access.
-- Customer outcome: every valid complaint has a persistent ticket record and can be confirmed, reopened or escalated.
-- Resilience: ticket and status operations remain usable when Groq is unavailable.
+- Customer can report a complaint or run line diagnostics in English, Hindi, or Hinglish without navigating complex forms.
+- Every valid complaint receives a unique ticket ID (`TCK-xxx`), $P1 - P4$ priority score, factor chips, and persistent database record.
+- Customer can retrieve live ticket status and audit history at any time.
+- AI-assisted resolution never silently closes a complaint without explicit customer confirmation (`Yes ✓` closes; `No ✗` reopens/escalates).
+- Admin status updates and resolution proposals are reflected in the customer experience in real time.
+- Active regional incidents are linked to new complaints, avoiding duplicate tickets and showing live outage progress.
+- Admin dashboard surfaces real-time complaint volumes, priority rankings, category distributions, sentiment trends, geographic heatmaps, and evidence-backed incident dossiers.
+- 100% offline resilience: all core features function seamlessly even without external API connectivity.
 
-### 2.2 Scope Boundaries
+### 2.3 Scope Boundaries
 
-- MVP focuses on complaint intelligence, operational orchestration and resolution support; it does not directly control telecom network equipment.
-- Real OSS/BSS integration is a future integration point; the hackathon uses simulated telemetry APIs and controlled data feeds.
-- External SMS/push delivery is optional for MVP; in-app notifications demonstrate the workflow.
-- The supplied complaint dataset is seed/demo data, not the live operational database.
+- **Complaint Intelligence & Orchestration**: The MVP focuses on complaint understanding, diagnostic simulation, and resolution orchestration; it does not directly control physical telecom network switches.
+- **Simulated OSS/BSS Integration**: Standardized backend API models represent telecom OSS/BSS data feeds.
+- **In-App Transactional Notifications**: Real-time in-app notification feeds demonstrate notification delivery; external SMS/push delivery can be integrated via webhooks.
+- **Database-Driven Runtime**: The platform uses sample CSV data for initial ingestion and evaluation but relies on SQLite (`tci.db`) and ChromaDB as live operational stores.
 
 ---
 
-## 3. Users & Roles
+## 3. Users, Roles & Access Control
 
 | Role | Needs | Key Capabilities |
 | :--- | :--- | :--- |
-| **Support Admin** | Operational control and fast resolution management. | Queue, assignment, priority, status, notes, resolution actions, SLA monitoring, escalation, audit. |
-| **Network Operations** | Detect and investigate service-wide problems. | Heatmap, spikes, incident management, root-cause investigation, affected-customer analysis, broadcast approvals. |
-| **Operations AI User** | Decision support for NOC/admin workflows. | Admin AI Assistant, prompt chips, live DB snapshots, ChromaDB SOP synthesis, classification explanations. |
-| **Customer** | Fast help and transparent resolution status. | Text chat assistant, diagnostics, troubleshooting, ticket tracking, confirmation, reopen and escalation. |
-| **System / AI** | Automated intelligence and controlled decision support. | LangGraph agents, ML scoring, spike detection, RAG retrieval, response generation, audit logging. |
+| **Customer** | Fast assistance, instant line tests, clear ticket status, multilingual chat, resolution verification. | Conversational assistant, speech input/output, line diagnostics, ticket creation, status tracking, confirmation, reopen, feedback rating. |
+| **Support Admin** | Efficient queue triage, ticket assignment, SLA monitoring, resolution proposal. | Priority queue, ticket management drawer, team assignment, status transitions, customer-facing notes, resolution proposal. |
+| **Network Operations (NOC)** | Real-time outage detection, heatmap visualization, root-cause investigation, broadcast alerts. | Regional heatmap, spike detection alerts, root-cause dossiers, field team assignment, broadcast notification approval. |
+| **Operations Admin (AI User)** | Decision support, briefing generation, classification reasoning, SOP recommendations. | Admin AI Assistant (`/admin/assistant`), prompt chips, live database snapshot querying, ChromaDB SOP synthesis. |
+| **System / AI Agents** | Automated NLP classification, scoring, RAG retrieval, incident correlation, language translation. | LangGraph state machine execution, scikit-learn scoring, ChromaDB retrieval, Groq synthesis, audit logging. |
 
-### 3.1 Access Control
+### 3.1 Access Control & Security Safeguards
 
-- Admins access operational complaint and incident data according to role.
-- Customers access only their own profile, conversations, complaints, notifications and feedback.
-- AI services never receive unrestricted database access; they call authorized backend functions.
-- All privileged actions are recorded in the audit log.
-- Admin AI recommendations remain subject to backend authorization and operational approval where required.
+- **Strict Customer Data Isolation**: Authenticated customers can access only their own profile, conversations, tickets, history, and notifications via signed Bearer JWT tokens.
+- **Role-Based Authorization**: Support and NOC endpoints require valid admin credentials.
+- **Controlled Agent Execution**: AI models do not receive raw SQL execution permissions; all mutations occur through authenticated backend API controllers.
+- **Immutable Audit Logging**: All privileged administrative and customer lifecycle transitions are logged in `audit_logs` and `complaint_status_history`.
 
 ---
 
-## 4. Admin Operational Complaint Lifecycle
+## 4. End-to-End Customer Complaint-to-Resolution Journey
 
-| Step | Admin / System Action | Outcome |
+```
+[Customer Interaction] ──> [1. Intent & Lang Translation]
+                                   │
+                                   ▼
+                       [2. Active Outage Match?]
+                              ├── Yes ──> Explain Outage, Root Cause & Link Ticket (No Duplicates)
+                              └── No  ──> [3. Grounded RAG SOP Troubleshooting]
+                                                ├── Fix Works ──> Confirm & Close (CSAT Feedback)
+                                                └── Unresolved ──> [4. Pre-Ticket Verification]
+                                                                          │
+                                                                          ▼
+                                                                [5. Register Ticket (P1-P4, SLA)]
+                                                                          │
+                                                                          ▼
+                                                                [6. Admin Triage & Propose Fix]
+                                                                          │
+                                                                          ▼
+                                                                [7. Confirm-to-Close Loop in Chat]
+                                                                      ├── Customer "Yes" ──> Closed & 1-5★ Rating
+                                                                      └── Customer "No"  ──> Reopen & Auto-Escalate
+```
+
+### 4.1 Step-by-Step Lifecycle Flow
+
+1. **Start**: Customer describes an issue or runs a speed test via text or voice in English, Hindi, or Hinglish.
+2. **Translate & Tokenize**: Hugging Face DistilBERT normalizes input into canonical English semantics.
+3. **Diagnose**: The agent inspects dynamic telemetry and checks for active geo-incidents.
+4. **Resolve**: If eligible, the assistant retrieves approved ChromaDB SOPs and guides the customer through self-service troubleshooting.
+5. **Verify**: If unresolved, the assistant summarizes extracted details (category, region, service) and asks for confirmation before ticket creation.
+6. **Ticket**: Upon confirmation, a unique ticket ID (`TCK-xxx`), priority tier ($P1 - P4$), SLA deadline, and auto-generated summary are persisted.
+7. **Track**: Customer queries live status, assigned team, and SLA deadlines at any time.
+8. **Propose Fix**: Support or field teams apply a fix and transition the ticket to `resolved_pending_confirmation`.
+9. **Confirm-to-Close**: The assistant prompts the customer in chat. `Yes ✓` closes the ticket and collects a 1–5 star CSAT rating. `No ✗` reopens and auto-escalates to senior teams.
+
+### 4.2 Complaint Status State Machine
+
+```
+NEW ──> IN_PROGRESS ──> WAITING_FOR_CUSTOMER ──> RESOLVED_PENDING_CONFIRMATION ──> CLOSED
+             │                                                │
+             ├──> ESCALATED <── REOPENED <────────────────────┘
+             └──> REOPENED (Customer reports recurrence)
+```
+
+Every status transition creates an immutable record in `complaint_status_history` storing `from_status`, `to_status`, `actor`, `reason`, and `timestamp`.
+
+---
+
+## 5. Autonomous Customer AI Assistant
+
+The Customer AI Assistant is implemented as a 6-node **LangGraph StateGraph** multi-task workflow (`backend/app/agents/agent_graph.py`).
+
+### 5.1 Supported Intents
+
+| Intent | Description & Trigger Examples | Backend Action |
+| :--- | :--- | :--- |
+| `DIAGNOSTIC` | *"run speed test"*, *"check my line speed"*, *"ping check"* | Executes `run_network_diagnostic` and renders telemetry card. |
+| `REPORT_COMPLAINT` | *"internet is down"*, *"broadband red light"*, *"bill extra charge"* | Extracts entities, checks incidents/RAG, stages pre-ticket confirmation. |
+| `CHECK_STATUS` | *"what is the status of my ticket?"*, *"track complaint"* | Queries SQLite for live ticket state, assigned team, and SLA deadline. |
+| `TROUBLESHOOT` | *"how to reset router"*, *"wifi slow fix"* | Retrieves matching SOPs from ChromaDB vector store. |
+| `KNOWN_INCIDENT` | *"outage in Raj Nagar"*, *"is net down in my area?"* | Explains live incident status, root cause, and estimated resolution. |
+| `CONFIRM_RESOLUTION` | *"yes, it works now"*, *"fixed"*, *"haan chal gaya"* | Transitions ticket to `closed` and prompts for 1–5 star CSAT rating. |
+| `REJECT_RESOLUTION` | *"no, still broken"*, *"nahi chala"* | Reopens ticket, escalates priority, and alerts support queue. |
+| `REOPEN_COMPLAINT` | *"issue is back again"*, *"dobara band ho gaya"* | Reopens closed ticket and updates status history timeline. |
+| `BILLING_QUERY` | *"why was ₹500 deducted?"*, *"recharge plan details"* | Provides verified billing guidance and invoice breakdown. |
+| `ESCALATE` | *"talk to human"*, *"connect to manager"*, *"executive se baat"* | Escalates ticket to senior support queue with priority bump. |
+| `GENERAL_QUERY` | Telecom service questions, 5G availability, SIM replacement. | Grounded response from knowledge base documents. |
+
+### 5.2 LangGraph 6-Node Customer Agent Architecture
+
+```
+[User Text / Voice] 
+         │
+         ▼
+ 1. translate_input (Hugging Face DistilBERT Tokenizer + Lang Detection)
+         │
+         ▼
+ 2. route_intent (Intent Classifier & State Continuation Engine)
+         │
+         ▼
+ 3. retrieve_context (Active Outage Geo-Match + ChromaDB Dense Vector RAG)
+         │
+         ▼
+ 4. execute_action (Line Speed Tests / Ticket DB Mutations / Verified Facts)
+         │
+         ▼
+ 5. synthesize_response (Grounded Groq LLM Generation / Zero Hallucination)
+         │
+         ▼
+ 6. translate_output (Devanagari Script Formatting / Bilingual Audio TTS)
+         │
+         ▼
+[Rendered Chat Reply + Telemetry Cards]
+```
+
+### 5.3 Core Agentic Design Rule
+The LLM never directly modifies database states or invents live ticket data. The LLM interprets natural language, provides empathetic responses, and structures output. All mutations (ticket creation, status updates, resolution verification, line speed testing) are executed strictly through deterministic backend Python APIs.
+
+---
+
+## 6. Solution Architecture & System Layers
+
+| System Layer | Components | Operational Purpose |
+| :--- | :--- | :--- |
+| **1. Presentation Layer** | React 18/19, Vite, React Router v7, Leaflet, Recharts, ThemeContext | Role-separated responsive UI (Landing page, 40/60 Customer Chat, Admin Operations Cockpit, Dark/Light theme). |
+| **2. API & Security Layer** | FastAPI, Uvicorn, Pydantic, Scrypt Auth, JWT Tokens | Role-gated REST endpoints, request validation, CORS middleware, background pipeline scheduler. |
+| **3. Agentic Layer** | LangGraph StateGraph (Customer 6-Node & Admin 4-Node Workflows) | Multi-task agent execution, state management, tool invocation, verified fact synthesis. |
+| **4. Multilingual Engine** | Hugging Face DistilBERT (`distilbert-base-multilingual-cased`) | Multilingual tokenization, language detection, Hinglish normalization, Devanagari script validation. |
+| **5. Machine Learning Layer** | scikit-learn (`TF-IDF + LogisticRegression`), Multi-Factor Scoring | Category classification ($\ge 82.4\%$ macro-F1), sentiment/urgency analysis, escalation risk, $P1 - P4$ priority scoring. |
+| **6. Vector Knowledge RAG** | ChromaDB Persistent Client + Sentence Transformers (`all-MiniLM-L6-v2`) | Dense semantic vector indexing and cosine similarity retrieval over SOPs, FAQs, and past resolved cases. |
+| **7. Generative AI & Speech** | Groq Cloud API (Llama-3.3-70b, Llama-3.1-8b, Whisper-large-v3-turbo) | Fast natural language synthesis, ticket summarization, root-cause narratives, multilingual voice STT. |
+| **8. Operational Data Store** | SQLite 3 (`tci.db` with WAL mode) | Single source of truth for users, complaints, status history, incidents, notifications, feedback, and audit logs. |
+| **9. Geolocation Engine** | Geoapify Geocoding API (`geo.py`) | Address-to-coordinate lookup with in-memory caching and India boundary validation for heatmap rendering. |
+| **10. Anomaly Intelligence** | Rolling-Baseline Spike Detector & Root-Cause Investigator | Statistical surge detection against 7-day baselines, multi-signal evidence dossiers, automated notification drafting. |
+
+---
+
+## 7. Admin Operations Console (16 Modular Subsystems)
+
+| # | Modular Subsystem | Operational Capabilities & Feature Set |
 | :---: | :--- | :--- |
-| **1. Monitor** | Review dashboard, queue, alerts and complaint intelligence. | Operational picture established. |
-| **2. Triage** | Inspect category, priority, sentiment, escalation risk and incident links. | Work prioritized. |
-| **3. Investigate** | Use heatmap, spike detection, incident data and AI evidence. | Likely issue scope identified. |
-| **4. Assign** | Route to Field Ops, RF Team, Billing, Support L2 or Network Ops. | Ownership established. |
-| **5. Resolve** | Add notes, use approved SOP/RAG guidance and record resolution source. | Resolution attempt tracked. |
-| **6. Verify** | Customer confirms or rejects the proposed resolution. | Closed-loop outcome captured. |
-| **7. Escalate/Reopen** | Escalate or reopen when the issue is unresolved or returns. | No silent closure. |
-| **8. Close** | Finalize only after confirmation and preserve complete history. | Auditable complaint lifecycle. |
+| **1** | **Universal Dataset Ingest** | 3-step wizard: file selection, auto-detected column schema mapping, PII redaction, ML scoring, and pipeline execution. |
+| **2** | **Operations Overview** | Real-time stat cards (total, open, in-progress, resolved), volume time series, category breakdown donut, sentiment trend, recurring themes, escalation risk table. |
+| **3** | **Complaint Queue** | Priority-ranked ($P1 - P4$) triage workbench with multi-facet filters (category, region, service, status, channel) and live SLA countdowns. |
+| **4** | **Ticket Management** | Slide-over drawer displaying customer-safe summaries, priority factor chips, sentiment score, and full audit timeline. |
+| **5** | **Assignment & Routing** | One-click assignment to specialized departments (*Field Ops, RF Team, Billing Team, Support L2, Network Ops*). |
+| **6** | **Resolution Management** | Propose technical fixes transitioning tickets to `resolved_pending_confirmation` for customer validation. |
+| **7** | **Status History Timeline** | Immutable audit trail displaying every status change, actor ID, timestamp, and transition note. |
+| **8** | **Leaflet Network Heatmap** | Interactive map of India rendering regional complaint density circles (Red = Surge, Amber = Elevated, Teal = Normal). |
+| **9** | **Spike Detection Engine** | Rolling baseline statistical anomaly detector automatically opening incident records upon volume surges. |
+| **10** | **Root-Cause Dossiers** | AI-generated investigative dossiers displaying likely causes, confidence gauges ($90\%+$), and $\ge 3$ checkable evidence bullets. |
+| **11** | **Incident Operations** | Acknowledge alerts, assign field teams, trigger broadcast notification drafts, and bulk-resolve linked complaints. |
+| **12** | **Real-Time Alert Inbox** | Instant alerts on newly detected surges with unread badge counters and direct links to incident dossiers. |
+| **13** | **Proactive Notify Queue** | Human-in-the-loop review queue for drafting, reviewing, approving, or rejecting broadcast notifications to affected users. |
+| **14** | **Executive Analytics** | Resolution rates, MTTR, escalation percentages, category trends, and customer CSAT satisfaction metrics. |
+| **15** | **Live Data Export** | One-click export of filtered complaint records to standards-compliant CSV files. |
+| **16** | **🤖 Admin AI Assistant** | LangGraph-powered NOC decision support assistant answering complex operational queries with live DB snapshots and ChromaDB SOPs. |
 
-### 4.1 Customer Service Channel
-
-The customer assistant feeds the same operational lifecycle. Customer steps remain: Start → Verify → Diagnose → Resolve → Confirm → Ticket → Track → Escalate → Reopen → Close. Every status transition is persisted in SQLite with actor, timestamp and reason.
-
-### 4.2 Complaint Status Model
-
-`NEW` → `VERIFICATION_REQUIRED` → `VERIFIED` → `CLASSIFIED` → `DIAGNOSING` → `IN_PROGRESS` → `RESOLVED_PENDING_CONFIRMATION` → `CLOSED`  
-Alternative paths: `WAITING_FOR_CUSTOMER`, `HUMAN_ESCALATION`, `REOPENED`.
-
----
-
-## 5. AI Operations & Customer Assistants
-
-### 5.1 Admin AI Assistant — Primary Decision Support
-
-The Admin AI Assistant is a workflow-driven operations agent. It answers complex operational questions using live database snapshots and ChromaDB SOP knowledge, explains complaint classifications and priority factors, summarizes incidents, and supports NOC/admin decision-making. It does not directly mutate privileged state.
-
-### 5.2 Admin Assistant Capabilities
-
-- Queue and ticket summaries, priority and SLA explanations.
-- Incident and spike investigation with affected-region/customer context.
-- Root-cause evidence synthesis from structured patterns and approved knowledge.
-- SOP retrieval and operational troubleshooting guidance.
-- Status, assignment and escalation explanations from authoritative SQLite state.
-- Prompt chips and guided operational queries for fast NOC/admin briefings.
-
-### 5.3 Customer Assistant — Text Service Channel
-
-The customer assistant handles `REPORT_COMPLAINT`, `DIAGNOSTIC`, `CHECK_STATUS`, `TROUBLESHOOT`, `KNOWN_INCIDENT`, `CONFIRM_RESOLUTION`, `REJECT_RESOLUTION`, `REOPEN_COMPLAINT`, `BILLING_QUERY`, `ESCALATE` and `GENERAL_QUERY` through the LangGraph customer workflow.
-
-### 5.4 LangGraph Workflows
-
-- **Admin workflow:** query → retrieve live DB context → retrieve SOP/knowledge → reason → explain recommendation → authorized action when permitted.
-- **Customer workflow:** translate_input → route_intent → retrieve_context → execute_action → synthesize_response → translate_output.
+### 7.1 Admin Console Principle
+The Admin Console helps operators rapidly answer four critical questions: **What is happening? Which customers are affected? What action should we take? Has the customer confirmed the resolution?**
 
 ---
 
-## 6. Solution Architecture
+## 8. Complaint Intelligence & Priority Scoring Pipeline
 
-| Layer | Components | Purpose |
-| :--- | :--- | :--- |
-| **Admin Layer** | React operations dashboard, Admin AI Assistant, Theme Engine | Primary control plane: queue, tickets, incidents, heatmap, analytics, alerts, notifications and audit. |
-| **Customer Layer** | React 40/60 text chat, diagnostic cards | Complaint reporting, diagnostics, troubleshooting, tracking and confirmation. |
-| **API Layer** | Python + FastAPI + Uvicorn + hashlib-based authentication | Central business logic, authorization and deterministic actions. |
-| **AI Orchestration** | LangGraph Multi-Task StateGraph | Controls multi-turn state continuation and tool execution. |
-| **Multilingual NLP** | Hugging Face DistilBERT (multilingual-cased) | Tokenization, Hinglish normalization and Devanagari validation. |
-| **ML Intelligence** | scikit-learn (TF-IDF + Logistic Regression) + Multi-Factor Scoring | Classification, sentiment, urgency, escalation and priority scoring. |
-| **Vector RAG** | ChromaDB + Sentence Transformers (all-MiniLM-L6-v2) | Grounded troubleshooting, FAQs, SOPs and approved resolved cases. |
-| **Generative AI** | Groq API (Llama models) + offline fallbacks | Conversation, summaries, explanations and root-cause narrative. |
-| **Geolocation** | Geoapify Geocoding API + cache | Location coordinates for Leaflet regional heatmap. |
-| **Operational DB** | SQLite (tci.db with WAL mode) | Live complaints, users, status history, incidents, notifications and audit logs. |
-| **Analytics / Detection** | Spike detection, heatmap, incident engine | Proactive operational intelligence. |
+### 8.1 Machine Learning Capabilities
 
-### 6.1 Data Flow
+| Pipeline Capability | Input Data | Output Prediction | Algorithm / Engine |
+| :--- | :--- | :--- | :--- |
+| **Text Classification** | Complaint text | Category & Subcategory | TF-IDF + Logistic Regression (Macro-F1 $\ge 82.4\%$) |
+| **Intent Routing** | Conversational text | 15+ Operational Intents | Regex Matchers + LangGraph Intent Classifier |
+| **Entity Extraction** | Complaint text | Region, Service, Device, Symptoms | Regex Entity Extractor + DistilBERT Normalizer |
+| **Sentiment Analysis** | Complaint message | Score ($-1.0\text{ to }+1.0$), Label | Lexicon & Rule-based Sentiment Model |
+| **Urgency Detection** | Complaint text + context | Urgency Score ($0.0\text{ to }1.0$) | Domain Keyword & Severity Weighting Model |
+| **Escalation Risk** | Text + Sentiment + History | Churn & Legal Risk ($0.0\text{ to }1.0$) | Multi-Factor Escalation Risk Predictor |
+| **Priority Scoring** | Multi-factor parameters | Priority Score ($0 - 100$), $P1 - P4$ | Explainable Multi-Factor Formula with Factor Chips |
+| **Ticket Summary** | Complaint details | Concise 1-sentence summary | Groq Llama-3 / Deterministic Fallback Template |
 
-Admin/customer/API input → validation → complaint persistence → SQLite → incident/duplicate evaluation → resolution/ChromaDB RAG → ticket lifecycle → notification/analytics → feedback.
+### 8.2 Multi-Factor Priority Formula & SLA Bands
 
-**Operational source of truth:** SQLite. **Knowledge retrieval:** ChromaDB. **Generation/reasoning:** Groq. The LLM cannot become the source of live ticket truth.
+$$\text{PriorityScore} = \text{clamp}\Big(0, 100, \, w_1 \cdot U + w_2 \cdot S + w_3 \cdot E + w_4 \cdot I + w_5 \cdot R \Big)$$
+
+- $U \in [0, 1]$: Urgency score (detected from emergency keywords like *down, exam, hospital, critical*).
+- $S \in [0, 1]$: Inverted sentiment score (higher for negative sentiment).
+- $E \in [0, 1]$: Churn / escalation risk probability (e.g., mentions of *TRAI, legal, switch operator*).
+- $I \in \{0, 1\}$: Active regional incident indicator ($+20\text{ bonus points}$ if linked to an ongoing outage).
+- $R \in [0, 1]$: Repeat contact count for the customer account.
+
+| Priority Tier | Score Range | SLA Target | Automated Operational Action |
+| :---: | :---: | :---: | :--- |
+| **P1 — Critical** | $80 - 100$ | **2 Hours** | High-priority admin alert; immediate queue banner |
+| **P2 — High** | $60 - 79$ | **6 Hours** | Routed to Tier-2 specialist queue |
+| **P3 — Medium** | $35 - 59$ | **24 Hours** | Standard operational queue |
+| **P4 — Low** | $0 - 34$ | **48 Hours** | General queue |
 
 ---
 
-## 7. Admin Operations Dashboard
+## 9. ChromaDB Vector RAG Knowledge Architecture
 
-All useful admin-dashboard capabilities from the original concept are retained and organized into 16 operational modules.
+RAG is used to make the assistant useful for actual problem resolution rather than simple classification.
 
-| Dashboard Module | Features & Operational Capabilities |
+### 9.1 Knowledge Sources
+- **Standard Operating Procedures (SOPs)**: Step-by-step guides for broadband reset, ONT reconfiguration, APN settings, eSIM activation, billing disputes.
+- **Troubleshooting FAQs**: Approved customer self-service steps.
+- **Incident Write-Ups**: Historical post-mortems and known fix patterns.
+- **Resolved Complaints**: Database of confirmed technical resolutions.
+
+### 9.2 Resolution Decision Matrix
+
+| Condition | Assistant Action |
 | :--- | :--- |
-| **1. Overview** | Total complaints, open tickets, resolved/closed tickets, high-priority complaints, SLA breaches, active incidents, complaint trends. |
-| **2. Complaint Queue** | Search/filter by status, category, service, region, priority, sentiment, escalation risk, date and incident. |
-| **3. Ticket Management** | View ticket detail, customer-safe summary, category, priority, AI analysis, incident link, status, SLA, assignment and history. |
-| **4. Assignment & Escalation** | Assign to support team/person (Field Ops, RF Team, Billing, Support L2, Network Ops), mark waiting for customer. |
-| **5. Resolution Management** | Add resolution notes, propose resolution, record resolution source, move to RESOLVED_PENDING_CONFIRMATION. |
-| **6. Status Management** | NEW, IN_PROGRESS, WAITING_FOR_CUSTOMER, ESCALATED, RESOLVED_PENDING_CONFIRMATION, CLOSED, REOPENED. |
-| **7. Complaint Intelligence** | Category distribution, sentiment, urgency, escalation risk, priority distribution and recurring issue analysis. |
-| **8. Heatmap** | Leaflet geographic complaint density with filters and drill-down to underlying complaints (Red=Spike, Amber=Elevated, Teal=Normal). |
-| **9. Spike Detection** | Rolling baseline comparison, abnormal complaint volume alerts and automatic incident creation. |
-| **10. Root-Cause Investigator** | Likely cause, confidence bar (90%+), evidence signals (>=3 bullets), affected region/service and supporting complaint patterns. |
-| **11. Incident Management** | Create/acknowledge/assign/update/resolve incidents; link complaints; inspect affected customers. |
-| **12. Proactive Alerts** | Admin alert inbox for complaint spikes, SLA risks, active incidents and escalation risks with unread badges. |
-| **13. Notification Center** | Draft, review and approve incident/customer notifications; view delivery/read state for in-app notifications. |
-| **14. Executive Analytics** | Resolution rate, response time, escalation rate, SLA performance, category trends, duplicate complaints and customer feedback. |
-| **15. Data Ingestion** | Admin-only 3-step CSV upload wizard with auto-schema detection, PII redaction and pipeline triggering. |
-| **16. Operations AI Assistant** | LangGraph decision support agent answering complex operational queries with live DB snapshots and ChromaDB SOPs. |
-
-### 7.1 Dashboard Principle
-
-The dashboard helps an operator answer four questions quickly: **What is happening? Which customers are affected? What should we do? Has the customer actually been helped?**
-
----
-
-## 8. Complaint Intelligence Pipeline
-
-| Capability | Input | Output |
-| :--- | :--- | :--- |
-| **Text Classification** | Complaint text | Category/subcategory/service type (Macro-F1 >= 82.4%). |
-| **Intent Detection** | Conversation message | Supported assistant intent (15+ categories). |
-| **Entity Extraction** | Complaint text | Location, service, device, timing and issue details. |
-| **Sentiment Analysis** | Complaint text/conversation | Positive/neutral/negative/critical signal. |
-| **Urgency Detection** | Complaint + context | Urgency score/level (0.0 to 1.0). |
-| **Escalation Risk** | Complaint + history + sentiment | Escalation probability/risk level (churn & TRAI threats). |
-| **Priority Scoring** | Urgency + impact + risk + incident context | P1/P2/P3/P4 priority with contributing factor chips. |
-| **Duplicate Detection** | New complaint + existing complaints/incidents | Similarity/link recommendation. |
-| **Ticket Summary** | Full conversation/complaint | Concise agent-ready 1-sentence summary. |
-
-### 8.1 Priority Example & Formula
-
-$$\text{Priority} = \text{clamp}(0, 100, \, w_1 \cdot \text{Urgency} + w_2 \cdot \text{Sentiment} + w_3 \cdot \text{Escalation} + w_4 \cdot \text{Incident} + w_5 \cdot \text{Repeat})$$
-
-- **P1 (Critical, 80-100):** SLA 2 Hours — High priority alert drafted; immediate queue banner.
-- **P2 (High, 60-79):** SLA 6 Hours — Routed to Tier-2 specialist queue.
-- **P3 (Medium, 35-59):** SLA 24 Hours — Standard operational queue.
-- **P4 (Low, 0-34):** SLA 48 Hours — General queue.
-
-The dashboard displays the major contributing factor chips rather than only a numeric score.
-
----
-
-## 9. RAG-Based Automated Resolution
-
-RAG is used to make the assistant useful for actual resolution rather than only classification.
-
-### 9.1 Knowledge Base
-
-- Telecom troubleshooting SOPs (broadband reset, ONT reconfiguration, APN settings, eSIM).
-- FAQs and approved service guidance.
-- Billing/service policies.
-- Historical confirmed resolutions.
-- Incident resolution notes and post-mortems.
-
-### 9.2 Resolution Decision
-
-| Condition | Assistant Behaviour |
-| :--- | :--- |
-| **Known incident exists** | Explain incident, provide available guidance and link complaint to incident where appropriate. |
-| **Known low-risk issue + good RAG match** | Guide customer through safe step-by-step troubleshooting SOPs. |
-| **Insufficient knowledge** | Ask clarification or escalate; do not hallucinate. |
-| **Account-sensitive issue** | Use authenticated backend data or route to human support. |
-| **Troubleshooting succeeds** | Ask customer to confirm resolution (Yes ✓). |
-| **Customer rejects resolution** | Reopen/escalate and preserve the previous attempt. |
+| **Active Geo-Incident Exists** | Explain known outage, provide root cause, link report to incident, prevent duplicate ticket. |
+| **Known Low-Risk Issue + Good RAG Match** | Guide customer through safe step-by-step troubleshooting SOPs. |
+| **Insufficient RAG Knowledge** | Ask targeted clarification questions or escalate; never hallucinate. |
+| **Account-Sensitive Query** | Retrieve authenticated data from SQLite or route to human support. |
+| **Troubleshooting Succeeds** | Ask customer to confirm resolution (`Yes ✓`). |
+| **Customer Rejects Fix** | Reopen ticket, escalate priority, and record previous attempt in history. |
 
 ### 9.3 RAG Grounding Rule
-
-Every troubleshooting response should be generated from retrieved approved knowledge. The assistant should not claim a cause, ETA, policy or fix that is not supported by the retrieved ChromaDB chunks or live SQLite backend state.
+Every troubleshooting response must be generated from retrieved approved knowledge. The assistant is strictly prohibited from claiming a cause, ETA, or fix not supported by the retrieved ChromaDB chunks or live SQLite state.
 
 ---
 
-## 10. Dynamic Data & Complaint Lifecycle
+## 10. Dynamic Data & Database Schema
 
-The original dataset remains useful for model training/evaluation and demonstration, but runtime operation is database-driven.
+The SQLite operational database (`backend/data/tci.db`) serves as the single source of truth across all components.
 
-| Data Source | Use |
+```
+[users] 1 ──── ∞ [complaints] 1 ──── ∞ [complaint_status_history]
+   │                 │
+   │                 ├── 1 ──── 1 [resolutions]
+   │                 └── ∞ ──── 1 [incidents] 1 ──── ∞ [notifications]
+   └── 1 ──── ∞ [feedback]
+```
+
+### 10.1 Core Database Tables
+
+| Table Name | Primary Purpose & Key Fields |
 | :--- | :--- |
-| **Historical CSV / Demo data** | Model development, evaluation, historical analytics and seed records. |
-| **Customer Assistant** | Real-time complaint creation and customer interactions. |
-| **Admin Dashboard** | Status updates, assignments, resolution notes and incident actions. |
-| **Dynamic Line Diagnostics** | Real-time simulated telemetry for line speed, latency, jitter and packet loss. |
-| **Background Detection** | Complaint aggregation, spike detection and incident generation. |
-
-### 10.1 Core Database Entities
-
-| Entity | Purpose |
-| :--- | :--- |
-| **users** | Customer/admin identity and role. |
-| **complaints** | Live complaint/ticket record with priority and SLA. |
-| **complaint_status_history** | Immutable status transition history. |
-| **chat_messages** | Conversation messages, detected intents and metadata. |
-| **resolutions** | Troubleshooting/resolution attempts and confirmation. |
-| **incidents** | Mass-service issue and root-cause information. |
-| **notifications** | Ticket/incident notification records. |
-| **kb_docs** | RAG source metadata. |
-| **feedback** | Customer resolution rating (1-5 stars) and comments. |
-| **audit_logs** | Operational/security trace. |
-
-### 10.2 Required Complaint Fields
-`complaint_id, customer_id, text, category, region, lat, long, service_type, sentiment, urgency, escalation_risk, priority_score, priority_label, sla_deadline, status, incident_id, assigned_to, ticket_summary, created_at`
+| `users` | Customer and admin profiles (`user_id`, `role`, `name`, `email`, `password_hash`, `region`, `service_type`). |
+| `complaints` | Live complaint records (`complaint_id`, `customer_id`, `text`, `category`, `region`, `lat`, `long`, `service_type`, `sentiment`, `urgency`, `escalation_risk`, `priority_score`, `priority_label`, `sla_deadline`, `status`, `incident_id`, `assigned_to`, `ticket_summary`, `created_at`). |
+| `complaint_status_history` | Immutable audit trail (`history_id`, `complaint_id`, `from_status`, `to_status`, `actor`, `reason`, `created_at`). |
+| `incidents` | Mass outage dossiers (`incident_id`, `region`, `service_type`, `complaint_count`, `spike_pct`, `root_cause`, `confidence`, `evidence`, `status`, `admin_ack_status`, `opened_at`, `resolved_at`). |
+| `notifications` | Transactional & broadcast notifications (`notification_id`, `recipient_id`, `recipient_type`, `incident_id`, `text`, `match_reason`, `approval_status`, `read`, `created_at`). |
+| `resolutions` | Technical resolution proposals (`resolution_id`, `complaint_id`, `proposed_by`, `source`, `text`, `created_at`). |
+| `feedback` | Customer CSAT ratings (`feedback_id`, `complaint_id`, `customer_id`, `rating`, `comment`, `created_at`). |
+| `kb_docs` | RAG source documents (`doc_id`, `kind`, `title`, `body`, `category`). |
+| `audit_logs` | Security and administrative audit trail (`log_id`, `user_id`, `role`, `action`, `target`, `payload`, `created_at`). |
 
 ---
 
 ## 11. Verification, Status & Resolution Management
 
-This section addresses the most important gap in a basic chatbot: what happens after the customer reports the issue?
-
 ### 11.1 Customer Verification
-
 - Authenticate customer before exposing personal complaint information.
-- For a new complaint, summarize extracted details and ask for confirmation before ticket creation.
-- For an existing complaint, identify it through the authenticated customer's account rather than trusting an arbitrary ticket ID.
-- If required information is missing or inconsistent, ask targeted clarification questions.
+- For a new complaint, summarize extracted details and request confirmation before ticket creation.
+- Identify existing complaints through authenticated account state rather than trusting arbitrary ticket numbers.
 
-### 11.2 Ticket Status Visibility
+### 11.2 Live Status Visibility
+- Customers can query ticket status in natural language (English, Hindi, Hinglish).
+- Assistant retrieves authoritative live state directly from SQLite (`tci.db`).
+- Returns ticket ID, current status, assigned team, SLA countdown, and resolution notes.
 
-- Customer can ask for the status in natural language (English, Hindi, Hinglish).
-- Assistant retrieves the current authoritative state directly from SQLite (`tci.db`).
-- Response includes status, last update, assigned team, SLA countdown, and a short explanation.
-- Status history is available for transparency in the customer drawer.
-
-### 11.3 Resolution Confirmation
-
-- AI/admin proposes a resolution → Ticket enters `RESOLVED_PENDING_CONFIRMATION`.
-- Customer is explicitly asked whether the issue is fixed.
-- **YES** → record confirmation → `CLOSED` → CSAT feedback.
-- **NO** → `REOPENED` / `HUMAN_ESCALATION` → support queue.
-
-### 11.4 Customer Feedback
-
-After closure, the customer can provide a 1–5 star rating and optional comment. Feedback is stored against the complaint and surfaced in admin analytics for resolution-quality monitoring.
+### 11.3 Confirm-to-Close Loop
+- Support or AI proposes a resolution $\to$ ticket moves to `resolved_pending_confirmation`.
+- Customer is prompted in the chat interface to verify if the service is restored.
+- **Yes ✓**: Confirms resolution $\to$ ticket moves to `closed` $\to$ prompts for 1–5 star CSAT feedback.
+- **No ✗**: Reopens ticket $\to$ moves to `reopened` / `escalated` $\to$ routes to senior support queue.
 
 ---
 
 ## 12. Mass Complaint Intelligence & Root-Cause Analysis
 
-The operational intelligence features turn raw complaints into actionable network insights.
-
 ### 12.1 Complaint Spike Detection
+- Compares complaint volume in rolling 6-hour windows against 7-day historical baselines per region and service.
+- Automatically opens an `incident` record when complaint density exceeds statistical thresholds ($3\times - 300\times$ surge).
+- Links subsequent incoming complaints to the active incident to prevent duplicate tickets.
 
-- Group complaints by time window (6h rolling), region, category and service type.
-- Compare current volume against a rolling 7-day historical baseline.
-- Flag statistically abnormal increases (3x to 300x surge) according to configured thresholds.
-- Create or update an incident record and link future matching complaints.
-
-### 12.2 Geographic Heatmap
-
-- Show complaint density by region via interactive Leaflet map.
-- Filter by time, category, service and severity.
-- Drill down from region → incident → complaint list.
-- Highlight abnormal regions (Red surge circles) and active incidents.
+### 12.2 Leaflet Geographic Heatmap
+- Visualizes real-time complaint density across Indian telecom circles.
+- Color-coded density circles: **Red** (abnormal surge), **Amber** (elevated volume), **Teal** (normal baseline).
+- Interactive popup displays regional statistics, active incidents, and direct drill-down links.
 
 ### 12.3 AI Root-Cause Investigator
 
-| Evidence Signal | Analytical Computation | Example |
+| Evidence Signal | Analytical Computation | Operational Example |
 | :--- | :--- | :--- |
-| **Volume anomaly** | Multiplier vs historical rolling baseline. | Complaint count is 352x above baseline in Raj Nagar. |
-| **Geographic concentration** | Percentage of complaints in target area. | 94.2% of complaints are from Ghaziabad circle. |
-| **Service concentration** | Dominant service proportion. | 98.1% of complaints involve broadband/fiber. |
-| **Time correlation** | Temporal cluster window onset. | Complaints started sharply within a 2-hour window. |
-| **Historical similarity** | Cosine similarity to past incidents. | 92% match to INC-2025-0873 (Optical fiber cut). |
-| **Knowledge evidence** | ChromaDB SOP corroboration. | Retrieved SOP supports physical line severance. |
+| **Volume Anomaly** | Multiplier vs historical rolling baseline. | $352\times$ surge above normal baseline in Raj Nagar. |
+| **Geographic Concentration** | Percentage of complaints originating in target region. | $94.2\%$ of recent complaints concentrated in Ghaziabad circle. |
+| **Service Concentration** | Percentage of complaints targeting a specific service. | $98.1\%$ of complaints involve Fiber Broadband. |
+| **Symptom Alignment** | Dominant symptom keyword cluster. | *"Red optical light blinking / No LOS signal"* in $89\%$ of reports. |
+| **Historical Match** | Cosine similarity against past resolved incidents. | $92\%$ match with historical incident `INC-2025-0873` (Optical Fiber Feeder Cut). |
 
-**Root-cause output:** likely cause + confidence gauge (90%+) + evidence signals (>=3 checkable bullets) + affected scope + recommended action. AI output remains a hypothesis until confirmed by operations.
+**Dossier Output**: Likely cause (*"Optical Fiber Cut / Physical Feeder Severance"*) + Confidence Gauge ($92\%$) + $\ge 3$ verifiable evidence bullets + Recommended field remediation action.
 
 ---
 
 ## 13. Proactive Customer Notification
 
-| Trigger | Notification Content & Purpose |
-| :--- | :--- |
-| **Ticket created** | Complaint/ticket reference ID, summary and SLA deadline target. |
-| **Ticket assigned** | Support ownership update indicating assigned engineering department. |
-| **Status changed** | Meaningful lifecycle update with customer-visible admin note. |
-| **Resolution proposed** | Customer asked to verify service in chat before closure. |
-| **Incident detected/confirmed** | Affected customers in region informed of known issue and ETA. |
-| **Complaint reopened** | Customer and support receive relevant update on escalation. |
-| **SLA risk/breach** | Customer and support alerted where priority threshold is reached. |
+| Event Trigger | Notification Target | Operational Behavior |
+| :--- | :--- | :--- |
+| **Ticket Created** | Complaining Customer | In-app confirmation with ticket ID, summary, and SLA target. |
+| **Ticket Assigned** | Complaining Customer | Update indicating assigned engineering/support team. |
+| **Status Updated** | Complaining Customer | In-app notification of status transition with notes. |
+| **Resolution Proposed** | Complaining Customer | Prompt in chat asking customer to verify fix and confirm closure. |
+| **Mass Incident Detected** | All Affected Subscribers in Region | AI drafts broadcast notification $\to$ queued for **Admin Approval** before delivery. |
 
-### 13.1 MVP Notification Policy
-
-In-app transactional updates are generated automatically from authenticated complaint state. **Mass proactive incident notifications must be reviewed and approved by an admin in the Notify Queue (`/admin/notifications`) to eliminate false-positive broadcast spam.** SMS/push provider integration is supported as optional webhooks.
+### 13.1 Human-in-the-Loop Notification Policy
+Transactional updates are delivered automatically. Mass outage broadcast notifications are held in the **Notify Queue** (`/admin/notifications`) and delivered only after explicit review and approval by an operations admin, eliminating false-positive broadcast spam.
 
 ---
 
 ## 14. Dynamic Network & Line Diagnostics
 
-To deliver real-time utility beyond conversational text, the platform provides an on-demand network telemetry diagnostic tool (`/api/chat/diagnostic`).
+To provide actionable value beyond text chatting, the platform incorporates an on-demand network telemetry engine (`/api/chat/diagnostic`).
 
-| Metric | Broadband / Fiber | Mobile Data | Degraded (Active Outage) |
+### 14.1 Telemetry Diagnostic Schema
+
+| Metric | Healthy Range (Broadband/Fiber) | Healthy Range (Mobile Data) | Degraded Range (Active Incident) |
 | :--- | :--- | :--- | :--- |
-| **Download Speed** | 94.0 - 298.0 Mbps | 35.0 - 78.0 Mbps | 1.5 - 12.0 Mbps |
-| **Upload Speed** | 88.0 - 290.0 Mbps | 15.0 - 32.0 Mbps | 0.5 - 4.0 Mbps |
-| **Ping Latency** | 12.0 - 28.0 ms | 22.0 - 45.0 ms | 120.0 - 280.0 ms |
-| **Jitter** | 1.2 - 4.5 ms | 3.5 - 8.0 ms | 25.0 - 65.0 ms |
-| **Packet Loss** | 0.0% | 0.0 - 0.5% | 8.0 - 22.0% |
-| **Line Health** | Optimal / Healthy | Optimal / Healthy | Degraded (Incident Linked) |
+| **Download Speed** | $94.0 - 298.0\text{ Mbps}$ | $35.0 - 78.0\text{ Mbps}$ | $1.5 - 12.0\text{ Mbps}$ |
+| **Upload Speed** | $88.0 - 290.0\text{ Mbps}$ | $15.0 - 32.0\text{ Mbps}$ | $0.5 - 4.0\text{ Mbps}$ |
+| **Ping Latency** | $12.0 - 28.0\text{ ms}$ | $22.0 - 45.0\text{ ms}$ | $120.0 - 280.0\text{ ms}$ |
+| **Jitter** | $1.2 - 4.5\text{ ms}$ | $3.5 - 8.0\text{ ms}$ | $25.0 - 65.0\text{ ms}$ |
+| **Packet Loss** | $0.0\%$ | $0.0 - 0.5\%$ | $8.0 - 22.0\%$ |
+| **Line Health** | **Optimal / Healthy** | **Optimal / Healthy** | **Degraded (Incident Linked)** |
 
-Customer requests speed test → Backend inspects customer region & active incidents → Returns telemetry payload → Rendered as a visual diagnostic card in chat.
+Telemetry results are rendered as interactive visual cards in the chat stream and read out via speech synthesis.
 
 ---
 
 ## 15. Backend REST API Specifications
 
-| Method & Route | Role | Purpose & Functionality |
-| :--- | :---: | :--- |
-| `POST /api/auth/login` | Public | Customer/admin authentication using implemented password hashing and role-aware authorization. |
-| `POST /api/auth/signup` | Public | Customer self-registration with region and service. |
-| `POST /api/chat` | Customer | Text conversational endpoint executing LangGraph StateGraph. |
-| `POST /api/chat/diagnostic` | Customer | Executes real-time network speed/latency diagnostics. |
-| `GET /api/my/tickets` | Customer | Lists authenticated customer's own tickets. |
-| `GET /api/my/tickets/{id}/history` | Customer | Status history timeline for a specific owned ticket. |
-| `POST /api/admin/upload/ingest` | Admin | Universal CSV ingestion with auto-schema mapping & ETL. |
-| `GET /api/admin/queue` | Admin | Filterable, paginated priority-ranked ticket queue. |
-| `PATCH /api/admin/complaints/{id}` | Admin | Updates ticket status, team assignment, and notes. |
-| `POST /api/admin/complaints/{id}/propose-resolution` | Admin | Proposes technical fix (`resolved_pending_confirmation`). |
-| `GET /api/admin/heatmap` | Admin | Regional complaint density & spike data for Leaflet map. |
-| `GET /api/admin/incidents` | Admin | Lists active outage incidents & root-cause dossiers. |
-| `POST /api/admin/assistant/chat` | Admin | Admin AI Assistant decision support LangGraph endpoint. |
-| `GET /api/admin/audit` | Admin | Immutable security & administrative audit logs. |
-
-### 15.1 API Security
-
-- hashlib-based password hashing and role-aware authorization on protected routes.
-- Customer ownership verification on every complaint read/write.
-- Server-side validation of all status transitions.
-- Comprehensive audit logging for privileged actions.
-- API keys and secrets stored securely in environment variables.
+| Method | Endpoint | Access Role | Description & Functionality |
+| :--- | :--- | :---: | :--- |
+| `POST` | `/api/auth/login` | Public | Authenticates customer or admin; returns JWT token. |
+| `POST` | `/api/auth/signup` | Public | Customer self-registration with region and service selection. |
+| `GET` | `/api/auth/me` | Authenticated | Retrieves current authenticated user profile. |
+| `POST` | `/api/chat` | Customer | Customer conversational endpoint executing LangGraph StateGraph. |
+| `GET` | `/api/chat/history` | Customer | Retrieves customer conversation message history. |
+| `POST` | `/api/chat/diagnostic` | Customer | Runs dynamic line speed and connectivity diagnostics. |
+| `POST` | `/api/chat/voice` | Customer | Multilingual voice transcription via Groq Whisper. |
+| `GET` | `/api/my/tickets` | Customer | Lists authenticated customer's own tickets. |
+| `GET` | `/api/my/tickets/{id}/history` | Customer | Status history timeline for a specific owned ticket. |
+| `GET` | `/api/my/notifications` | Customer | In-app notification feed for the authenticated customer. |
+| `POST` | `/api/admin/upload/preview` | Admin | Analyzes uploaded CSV and returns suggested column mappings. |
+| `POST` | `/api/admin/upload/ingest` | Admin | Ingests CSV with mapping, runs ETL, ML scoring, and spike engine. |
+| `GET` | `/api/admin/analytics/summary` | Admin | High-level metrics, volume time series, category donuts, sentiment. |
+| `GET` | `/api/admin/analytics/risk` | Admin | Ranked escalation risk table with contributing factor chips. |
+| `GET` | `/api/admin/queue` | Admin | Filterable, paginated complaint queue with ticket summaries. |
+| `PATCH` | `/api/admin/complaints/{id}` | Admin | Updates ticket status, assigned team, and customer-visible notes. |
+| `POST` | `/api/admin/complaints/{id}/propose-resolution` | Admin | Proposes technical fix (`resolved_pending_confirmation`). |
+| `GET` | `/api/admin/heatmap` | Admin | Regional complaint density and spike data for Leaflet map. |
+| `GET` | `/api/admin/incidents` | Admin | Lists active and historical outage incidents. |
+| `POST` | `/api/admin/incidents/{id}/ack` | Admin | Acknowledges incident and assigns field engineering teams. |
+| `POST` | `/api/admin/incidents/{id}/resolve` | Admin | Marks incident resolved and closes linked complaint tickets. |
+| `GET` | `/api/admin/alerts` | Admin | Real-time spike alert inbox for operations admins. |
+| `GET` | `/api/admin/notifications/queue`| Admin | Review queue for drafted broadcast notifications. |
+| `POST` | `/api/admin/notifications/{id}/approval` | Admin | Approves or rejects proactive broadcast notifications. |
+| `POST` | `/api/admin/assistant/chat` | Admin | Admin AI Assistant endpoint executing LangGraph Operations Agent. |
+| `GET` | `/api/admin/audit` | Admin | Tamper-evident audit logs capturing all privileged actions. |
+| `GET` | `/api/admin/export.csv` | Admin | Exports current filtered complaints to downloadable CSV. |
 
 ---
 
-## 16. Free / Low-Cost AI & API Strategy
+## 16. Free / Zero-Cost AI & API Strategy
 
-The platform is engineered to run on 100% free-tier or open-source components with zero required software spend.
+The entire architecture is engineered to run on **100% free-tier or local open-source components**:
 
-| Component | MVP Choice | Operational Role & Cost Profile |
+| Component | Technology Choice | Operational Role & Free-Tier Limits |
 | :--- | :--- | :--- |
-| **Generative LLM API** | Groq Free Plan | Assistant responses, ticket summaries, root-cause narratives (Zero cost). |
-| **Embeddings** | sentence-transformers | all-MiniLM-L6-v2 local CPU embeddings (Zero cost). |
-| **Vector Store** | ChromaDB (local) | Persistent vector store for SOP retrieval (Zero cost). |
-| **Multilingual Tokenizer** | Hugging Face DistilBERT | distilbert-base-multilingual-cased (Zero cost). |
-| **Classification & ML** | scikit-learn | Complaint category and intent classification (Zero cost). |
-| **Database** | SQLite (local) | Live operational state in WAL mode (Zero cost). |
-| **Backend** | Python + FastAPI | REST API and background scheduler (Zero cost). |
-| **Geocoding** | Geoapify (Free tier) | Location coordinates with memory cache (Zero cost). |
+| **Generative LLM** | Groq Cloud API (`llama-3.3-70b-versatile`) | Fast conversational generation, summaries, root-cause narratives (Free Tier). |
+| **Speech Recognition** | Groq Whisper (`whisper-large-v3-turbo`) | Multilingual voice transcription (Free Tier). |
+| **Embeddings** | `sentence-transformers` (`all-MiniLM-L6-v2`) | Local CPU vector embeddings (Zero API cost). |
+| **Vector Store** | ChromaDB Persistent Client | Local embedded vector database (Zero API cost). |
+| **Multilingual Tokenizer** | Hugging Face Multilingual DistilBERT | Local CPU tokenization & language normalization (Zero API cost). |
+| **ML Classification** | scikit-learn (`TF-IDF + LogisticRegression`) | Local CPU classification & scoring (Zero API cost). |
+| **Geocoding** | Geoapify Geocoding API | Free Tier geocoding with dynamic in-memory caching. |
+| **Database** | SQLite 3 (WAL Mode) | Serverless relational database (Zero infrastructure cost). |
+
+### 16.1 Deterministic Offline Fallback Protocol
+Every external API call (Groq LLM, Whisper STT, Geoapify Geocoding) includes an immediate, deterministic offline fallback. If API keys are missing or rate limits are reached, TelConnect continues operating with full feature parity using rule-based text generation, lexical translations, and built-in geocodes.
 
 ---
 
-## 17. Non-Functional Requirements
+## 17. Non-Functional Requirements & AI Safety
 
-| Category | Requirement & Implemented Standard |
-| :--- | :--- |
-| **Performance** | Customer/API interaction latency <= 1.5s on live Groq LLM, <= 50ms on offline fallback. |
-| **Availability** | Ticket/status operations remain usable even if external LLM services are offline. |
-| **Security** | hashlib-based password hashing and role-based authorization guards; no JWT requirement in the implemented flow. |
-| **Privacy** | Automatic regex PII redaction of names, phone numbers and emails upon ingestion. |
-| **Reliability** | Deterministic SQLite transactions; AI failures never create invalid states. |
-| **Explainability** | AI classification, priority scores and root causes expose contributing factors and evidence. |
-| **Auditability** | Status, assignment, resolution, escalation and notification actions are logged immutably. |
-| **Language** | English, Hindi (Devanagari) and Hinglish transliteration support. |
-| **Cost** | Free-tier architecture with zero cloud infrastructure overhead for the hackathon MVP. |
+### 17.1 Non-Functional Requirements
+- **Performance**: Customer chat API latency $\le 1.5\text{s}$ on live LLM, $\le 50\text{ms}$ on offline fallback.
+- **Availability**: System operates independently of external API uptime via deterministic fallbacks.
+- **Security**: Password hashing via scrypt/PBKDF2, signed JWT tokens, role-based route guards.
+- **Privacy & PII Protection**: Customer phone numbers, emails, and names are stripped or masked during ingestion before storage or LLM prompting.
+- **Explainability**: No raw numeric black-box scores; all ML outputs expose contributing factor chips and evidence bullets.
+- **Auditability**: All privileged operations, status changes, assignments, and approvals are logged immutably.
 
-### 17.1 AI Safety Rules
-
-- Never fabricate live ticket status or ticket IDs.
-- Never claim an outage is confirmed when it is only an unverified AI hypothesis.
-- Never claim resolution without explicit customer confirmation.
-- Never reveal another customer's private data.
-- Never perform privileged database actions directly from generated text.
-- When confidence or evidence is insufficient, ask for clarification or escalate.
+### 17.2 AI Safety Rules
+1. **Never fabricate live ticket status or ticket IDs**.
+2. **Never claim an outage is confirmed when it is only an unverified AI hypothesis**.
+3. **Never silently close a ticket without explicit customer confirmation**.
+4. **Never expose one customer's private data or ticket history to another customer**.
+5. **Never execute privileged database mutations directly from unvalidated LLM output**.
 
 ---
 
-## 18. Technology Stack — Implemented Project Stack
+## 18. Technology Stack & Separation of Responsibilities
 
-| Area | Technology / Implementation |
-| :--- | :--- |
-| **Admin Frontend** | React + Vite; Admin Operations Dashboard; Admin AI Assistant; Recharts; React-Leaflet; shared Dark/Light Theme Engine. |
-| **Customer Frontend** | React + Vite; 40/60 customer text-chat layout; diagnostic cards. |
-| **Backend** | Python + FastAPI + Uvicorn; REST-style backend APIs and deterministic business logic. |
-| **Authentication** | hashlib-based password hashing with role-aware authorization. |
-| **AI Orchestration** | LangGraph Multi-Task StateGraph; separate customer and admin workflows. |
-| **ML / NLP** | Hugging Face DistilBERT multilingual model; scikit-learn TF-IDF + Logistic Regression; multi-factor priority scoring. |
-| **RAG / Knowledge** | ChromaDB persistent vector store + Sentence Transformers (all-MiniLM-L6-v2). |
-| **Generative AI** | Groq Cloud API for Llama models, with deterministic offline fallbacks. |
-| **Database** | SQLite 3 (tci.db) with WAL mode, foreign keys, status history and audit logs. |
-| **Geolocation** | Geoapify Geocoding REST API with caching; Leaflet for regional heatmaps. |
-| **Development / Runtime** | VS Code, npm/Vite frontend workflow, Python virtual environment, FastAPI/Uvicorn backend runtime. |
+```
+TelConnect Full-Stack Architecture
+├── Presentation: React 18/19, Vite, React Router v7, Leaflet, React-Leaflet, Recharts, ThemeEngine
+├── Backend API: Python 3.10+, FastAPI, Uvicorn, Pydantic
+├── Agent Framework: LangGraph StateGraph (Multi-Task State Machines)
+├── Vector DB: ChromaDB PersistentClient, Sentence-Transformers (all-MiniLM-L6-v2)
+├── Multilingual NLP: Hugging Face Transformers (distilbert-base-multilingual-cased)
+├── AI & Speech: Groq API (Llama-3, Whisper) with Deterministic Offline Fallback
+├── Geocoding: Geoapify Geocoding REST API (Cached)
+├── Operational DB: SQLite 3 (WAL Mode)
+└── Testing Suite: Pytest, HTTPX, FastAPI TestClient (106+ Tests)
+```
 
 ### 18.1 Separation of Responsibilities
 
-| System | Should Do | Should Not Do |
+| System Component | Must Do | Must NOT Do |
 | :--- | :--- | :--- |
-| **SQLite** | Store authoritative live operational state. | Generate natural-language answers. |
-| **ChromaDB** | Retrieve semantic SOP knowledge. | Store authoritative live ticket status. |
-| **scikit-learn ML** | Classify/score structured complaint data. | Perform privileged database mutation. |
-| **Groq LLM** | Reason over supplied context and generate language. | Invent current system state or ticket IDs. |
-| **FastAPI** | Authorize and execute state transitions. | Depend on generated text for authorization. |
-| **Admin Dashboard** | Operate, monitor and approve broadcasts. | Bypass backend authorization or audit logs. |
+| **SQLite (`tci.db`)** | Store authoritative live operational state and audit history. | Generate natural language text. |
+| **ChromaDB** | Index and retrieve dense semantic SOPs and resolution knowledge. | Store live ticket status. |
+| **scikit-learn ML** | Score categories, sentiment, urgency, escalation risk, and priority. | Execute database writes directly. |
+| **Groq LLM** | Synthesize natural language, explanations, and empathetic summaries. | Invent ticket IDs or mutate state without APIs. |
+| **FastAPI Backend** | Authenticate, authorize, and execute deterministic state transitions. | Rely on LLM text for authorization decisions. |
+| **Admin Console** | Provide operational control, triage queues, heatmaps, and audit logs. | Bypass backend validation or security checks. |
 
 ---
 
 ## 19. Testing & Acceptance Criteria
 
-| Scenario | Admin-Oriented Acceptance Criteria |
+### 19.1 Acceptance Scenarios
+
+| Scenario | Acceptance Criteria |
 | :--- | :--- |
-| **Admin overview** | Dashboard shows complaint volume, open/resolved tickets, high priority, SLA risk and active incidents. |
-| **Queue management** | Admin can search/filter, assign, update, escalate and inspect ticket history. |
-| **Incident investigation** | Spike detection creates/updates an incident and links matching complaints. |
-| **Root cause** | Dashboard shows evidence signals, confidence and affected scope for an AI hypothesis. |
-| **Admin AI** | Operations AI answers using live DB snapshots and approved ChromaDB SOPs without unrestricted DB access. |
-| **Notification approval** | Admin reviews/approves proactive incident notifications before broadcast. |
-| **Customer resolution** | Customer confirmation closes an eligible complaint; rejection reopens/escalates. |
-| **Authorization** | A customer cannot read another customer's complaint even with its ticket ID. |
-| **AI outage** | Groq unavailable → deterministic ticket/status APIs continue to work with offline fallbacks. |
+| **New Complaint Intake** | Customer describes issue $\to$ assistant collects details $\to$ user confirms $\to$ ticket registered in SQLite. |
+| **Known Outage Interception** | Assistant matches active geo-incident $\to$ explains root cause $\to$ links report without duplicate ticket. |
+| **RAG Troubleshooting** | Assistant retrieves approved SOP $\to$ guides user $\to$ requests confirmation of resolution. |
+| **Confirm-to-Close Loop** | Customer confirms fix (`Yes ✓`) $\to$ ticket closes $\to$ CSAT rating recorded. Customer rejects (`No ✗`) $\to$ reopens & escalates. |
+| **Dynamic Line Diagnostic** | Customer requests speed test $\to$ telemetry card rendered in stream $\to$ voice TTS summary readout. |
+| **Multilingual Interaction** | Hindi/Hinglish text $\to$ normalized by DistilBERT $\to$ accurately classified $\to$ replies in Devanagari script. |
+| **Admin AI Decision Support** | Admin asks operational questions $\to$ LangGraph Agent synthesizes live DB metrics and ChromaDB SOPs. |
+| **Spike Detection & Dossier** | Simulated surge $\to$ anomaly detector fires $\to$ red heatmap alert $\to$ evidence dossier generated. |
+| **Human-in-the-Loop Broadcast** | Incident detected $\to$ notifications drafted $\to$ delivered only upon explicit admin approval. |
+| **API Auth & Data Isolation** | Customer cannot access another user's tickets even with valid ticket IDs. |
+| **Offline Resilience** | Backend functions and tests pass with zero external API keys. |
 
-### 19.1 Key KPIs & Validated Benchmarks
+### 19.2 Target KPIs & Validated Results
 
-- **Complaint classification macro-F1:** >= 82.4% on the held-out split.
-- **Intent routing accuracy:** >= 95.0% across 15+ supported intents.
-- **Ticket creation correctness:** 100% in automated workflow tests.
-- **Status retrieval correctness:** 100% in authorized customer tests.
-- **Resolution confirmation capture:** 100% of AI-assisted resolution attempts.
-- **Test suite pass rate:** 100% (106+ passing backend tests as specified in the PRD).
+| KPI Metric | Benchmark Target | Implemented & Validated Result |
+| :--- | :---: | :---: |
+| **Category Macro-F1 Score** | $\ge 80.0\%$ | **$\ge 82.4\%$** (Held-out test split) |
+| **Intent Routing Accuracy** | $\ge 90.0\%$ | **$\ge 95.0\%$** across 15+ conversational intents |
+| **Ticket State Integrity** | $100\%$ | **$100\%$** (Strict transition constraints in SQLite) |
+| **Customer Data Isolation** | $100\%$ | **$100\%$** (Role-based JWT verification on all routes) |
+| **Automated Test Suite** | $100\%$ Pass Rate | **106+ Tests Passing** in `backend/tests/` |
+| **Zero-Cost Operation** | $100\%$ Free Tier | Operates on free-tier APIs and offline local fallbacks |
 
 ---
 
-## 20. Implementation Plan & Demo
+## 20. Implementation Plan & Minimum Successful Demo
 
-| Phase | Implementation Milestone |
+### 20.1 Implementation Phases
+
+| Phase | Milestone Description |
 | :---: | :--- |
-| **1** | Admin dashboard foundation, SQLite schema, authentication, role-based access and demo accounts. |
-| **2** | FastAPI complaint/status APIs, CSV schema mapper and audit logging. |
-| **3** | Admin AI Assistant + LangGraph admin workflow + live DB snapshots + ChromaDB SOP retrieval. |
-| **4** | Admin queue, ticket drawer, assignment, priority/SLA and status management. |
-| **5** | Leaflet heatmap, Geoapify geocoding, spike detection and incident management. |
-| **6** | Root-cause investigator, evidence dossier and confidence gauge. |
-| **7** | Proactive notification queue, admin approval and in-app notification feed. |
-| **8** | Customer LangGraph assistant, conversation state, intent routing and DistilBERT. |
-| **9** | Complaint verification, ticket creation, live status tracking and line diagnostics. |
-| **10** | ChromaDB/SentenceTransformers troubleshooting and resolution confirmation loop. |
-| **11** | Reopen/escalation workflow, customer feedback and analytics. |
-| **12** | Theme engine (Dark/Light), text-chat UI validation and full test-suite validation. |
+| **Phase 1** | SQLite schema design, connection management, demo account seeding, and role-based JWT auth. |
+| **Phase 2** | Universal CSV ingestion engine, auto-schema detection, and PII redaction pipeline. |
+| **Phase 3** | scikit-learn ML models: category classifier, sentiment, urgency, escalation risk, and multi-factor priority. |
+| **Phase 4** | ChromaDB vector store setup, SentenceTransformer embeddings, and SOP indexing. |
+| **Phase 5** | LangGraph Customer Agent (6-node StateGraph) and dynamic line diagnostics engine. |
+| **Phase 6** | LangGraph Admin Operations Agent (4-node StateGraph) and decision support cockpit. |
+| **Phase 7** | Rolling-baseline spike detector, Leaflet geographic heatmap, and AI root-cause investigator. |
+| **Phase 8** | Proactive notification approval queue and in-app transactional notification feed. |
+| **Phase 9** | React frontend: 40/60 chat split, admin cockpit, Dark/Light theme engine, and test validation. |
 
-### 20.1 Minimum Successful Admin Demo
+### 20.2 Minimum Successful Demo Script
 
-- Admin opens the dashboard and immediately sees queue, priority, SLA, incident and trend information.
-- Admin filters a complaint cluster and investigates the associated incident/heatmap.
-- Admin asks the Operations AI Assistant why the spike is occurring and receives evidence-backed analysis.
-- Admin assigns the affected tickets to the appropriate support/network team.
-- Admin updates status and proposes a resolution; the customer receives the update.
-- Customer confirms or rejects the resolution; the dashboard reflects the resulting closed or reopened state.
-- Admin reviews and approves a proactive notification for affected customers.
-- Admin uses the audit trail to verify the operational actions.
+1. **Admin Ingest**: Admin logs in, uploads demo CSV via 3-step wizard, and confirms schema mapping.
+2. **Operations Cockpit**: Admin inspects live KPIs, outage volume spike, and priority-ranked risk table.
+3. **Network Heatmap**: Admin views Raj Nagar glowing red and navigates to the incident dossier.
+4. **Root-Cause Dossier**: Admin inspects $92\%$ confidence cause, 5 evidence bullets, acknowledges, and drafts notifications.
+5. **Notify Queue**: Admin approves drafted broadcast notifications.
+6. **Admin AI Assistant**: Admin queries *"Which complaints need immediate attention?"* and receives structured intelligence.
+7. **Customer Closed Loop**: Customer logs in, sees proactive banner, runs line speed test, describes issue in Hinglish, experiences incident-aware interception without duplicate tickets, and verifies resolution in the confirm-to-close loop.
 
 ---
 
 ## 21. Product Differentiation
 
-| Traditional Complaint System | Proposed TelConnect Platform |
-| :--- | :--- |
-| **Passive ticketing** | Admin control plane with live queue, assignments, SLA and resolution actions. |
-| **Fragmented reporting** | Unified operational intelligence across complaints, incidents, heatmaps and analytics. |
-| **Manual investigation** | Admin AI Assistant combines live DB context, SOP retrieval and evidence synthesis. |
-| **Outages discovered late** | Complaint spikes trigger anomaly alerts, incident records and root-cause dossiers. |
-| **No governance layer** | Role-based access, controlled actions, immutable audit logs and notification approval. |
-| **Customer status is opaque** | Admin updates flow to the customer text channel with live authoritative state. |
-| **Dataset-driven operation** | SQLite is the dynamic operational source; CSV is seed/analysis data only. |
-| **Generic AI chatbot** | Controlled LangGraph multi-task agents connected to authorized backend functions. |
+| Feature / Dimension | Traditional Telecom Ticketing | Basic Generative Chatbots | **TelConnect Platform** |
+| :--- | :--- | :--- | :--- |
+| **Resolution Focus** | Creates static, passive tickets. | Generates generic, unverified text. | **Autonomous closed-loop resolution with verification.** |
+| **Network Telemetry** | Requires separate speed test apps. | Cannot test physical lines. | **On-demand line & speed diagnostics inside chat.** |
+| **Multilingual NLP** | Rigid keyword matching. | Prone to Hindi transliteration errors. | **Hugging Face DistilBERT + Groq Neural Translation.** |
+| **Operational Linkage** | Disconnected from call centers. | No operational backend. | **Direct integration with NOC heatmap & spike alerts.** |
+| **Outage Detection** | Discovered after hundreds of calls. | None. | **Real-time rolling baseline anomaly detection.** |
+| **Root-Cause Analysis** | Manual post-mortem analysis. | Speculative hallucinations. | **Evidence-backed dossiers with confidence metrics.** |
+| **Proactive Comms** | Uncontrolled mass SMS blasts. | None. | **Human-in-the-loop review and approval queue.** |
+| **Operational Cost** | Expensive enterprise licenses. | High per-token API costs. | **100% Free-Tier & Zero-Cost Architecture.** |
 
 ### 21.1 Final Product Definition
-
-An admin-oriented telecom complaint intelligence and automated resolution platform that gives support and network operations teams a unified control plane for complaint triage, ticket management, incident detection, heatmaps, root-cause analysis, AI decision support, proactive notifications and auditability, while a connected customer text assistant provides diagnostics, troubleshooting, status tracking and explicit resolution confirmation.
+**A unified telecom operations and customer resolution platform that merges conversational support, dynamic network diagnostics, grounded vector RAG, and live ticket tracking with operational intelligence—including classification, sentiment, escalation prediction, geographic heatmaps, automated spike detection, AI root-cause dossiers, and proactive notification.**
 
 ---
 
 ## 22. Recommended Presentation Flow
 
-| Scene | Admin-Led Demonstration | Message to Judges |
+| Scene | Demonstration Action | Key Message to Judges |
 | :--- | :--- | :--- |
-| **Admin overview** | Open dashboard with queue, SLA risk, incidents and trends. | TelConnect starts with operational visibility. |
-| **Complaint intelligence** | Open a complaint and show category, sentiment, urgency, priority and escalation risk. | The system turns raw complaints into actionable intelligence. |
-| **Incident / heatmap** | Inspect a spike and drill into region, service and affected complaints. | Operations can detect service-wide issues early. |
-| **Admin AI Assistant** | Ask why the spike is occurring and retrieve SOP/evidence. | AI supports decisions without bypassing authorization. |
-| **Ticket action** | Assign, update, escalate or propose resolution from the dashboard. | The admin remains in control of operational actions. |
-| **Customer confirmation** | Customer accepts/rejects the fix; dashboard reflects the outcome. | Closed-loop resolution prevents silent closure. |
-| **Notification** | Admin reviews and approves a proactive incident notification. | Human-in-the-loop reduces false-positive broadcasts. |
-| **Audit** | Show status/action history. | Every privileged action is traceable. |
-| **Customer channel** | Briefly demonstrate text chat, diagnostics and live status. | The customer experience is the service channel, not the operational control plane. |
+| **1. Customer Inconvenience** | Customer reports broadband failure in Hindi/Hinglish. | True multilingual understanding without form fatigue. |
+| **2. Dynamic Telemetry** | Customer triggers instant line speed diagnostic. | Real-time diagnostic capability inside conversational UI. |
+| **3. Incident Interception** | Assistant links complaint to active outage with plain-English ETA. | Prevents duplicate ticket flooding and calms subscribers. |
+| **4. Grounded RAG Fix** | Customer receives approved SOP steps for self-service fix. | First-Contact Resolution without human intervention. |
+| **5. Confirm-to-Close** | Customer verifies fix (`Yes ✓`) and rates interaction 5 stars. | Closed-loop accountability; nothing closes silently. |
+| **6. Admin Cockpit** | Admin monitors priority queue, SLA countdowns, and risk tables. | Single source of truth across all operations. |
+| **7. Anomaly & Heatmap** | Leaflet heatmap highlights red outage surge in real time. | Transforms complaints into proactive network alerts. |
+| **8. Root-Cause Dossier** | AI presents evidence-backed cause with $92\%$ confidence. | Explainable AI backed by empirical data signals. |
+| **9. Proactive Broadcast** | Admin reviews and approves drafted customer notifications. | Human-in-the-loop safety prevents false broadcasts. |
+| **10. Admin AI Assistant** | Admin asks complex NOC operational questions. | Autonomous decision support for network operations. |
 
 ---
 
-## 23. Requirements Traceability to Use Case 13
+## 23. Risks & Mitigations
 
-| Use Case Requirement | PRD Implementation |
+| Identified Risk | Risk Severity | Implemented Mitigation Strategy |
+| :--- | :---: | :--- |
+| **Groq API Rate Limits (429)** | Medium | In-process caching, efficient prompt sizing, and 100% deterministic offline fallback. |
+| **LLM Hallucinations** | High | Strict verified facts compile step, ChromaDB RAG grounding, zero unverified state mutations. |
+| **False Root Cause Claims** | Medium | Multi-signal evidence threshold ($\ge 3$ signals required); output labeled as hypothesis until verified. |
+| **Duplicate Ticket Ingestion** | Low | Universal CSV ingestion deduplication and active incident auto-linking. |
+| **PII Data Leakage** | High | Automatic regex redaction of phone numbers, emails, and names during ingestion. |
+| **Stale Ticket Memory** | Medium | Always query live SQLite database (`tci.db`) for ticket state. |
+
+---
+
+## 24. Requirements Traceability to Use Case 13
+
+| Use Case 13 Requirement | PRD v7.0 Implementation Details |
 | :--- | :--- |
-| **Prioritize critical complaints** | Multi-Factor Priority Scoring + Admin Queue + SLA deadlines. |
-| **Predict escalation risk** | Escalation Risk model + alerts. |
-| **Detect service problems** | Spike detection + Leaflet heatmap + Incident Management. |
-| **Recommend resolution actions** | ChromaDB Vector RAG + approved SOP procedures. |
-| **Complaint triage assistant** | LangGraph customer multi-task workflow. |
-| **Operations AI decision support** | LangGraph Admin Operations Agent (/admin/assistant). |
-| **Classify complaint categories** | TF-IDF + Logistic Regression (Macro-F1 >= 82.4%). |
-| **Customer experience** | 40/60 text chat, line diagnostics, confirm-to-close loop. |
+| **Complaint Classification** | `TF-IDF + LogisticRegression` category model ($\ge 82.4\%$ macro-F1). |
+| **Sentiment & Urgency Detection** | Lexicon & rule-based sentiment model with negative polarity weighting. |
+| **Priority Scoring ($P1 - P4$)** | Multi-factor explainable formula with SLA deadlines and contributing factor chips. |
+| **Escalation Risk Prediction** | Multi-factor churn and regulatory threat detection model. |
+| **Resolution Recommendation** | ChromaDB vector store + Sentence Transformers dense retrieval over approved SOPs. |
+| **Ticket Summaries** | One-sentence plain-language summaries generated by Groq / template fallback. |
+| **Conversational Assistant** | LangGraph 6-Node Customer Multi-Task StateGraph with voice STT / TTS. |
+| **Vector DB / RAG** | ChromaDB persistent vector database with cosine similarity indexing. |
+| **Root-Cause Intelligence** | Multi-signal anomaly detector, Leaflet heatmap, and evidence dossiers. |
+| **Operational Dashboard** | 16-module Admin Operations Cockpit with Admin AI Assistant. |
+| **Customer Experience** | 40/60 split UI, dynamic line diagnostics, status tracking, confirm-to-close loop. |
+
+---
+
+## 25. Conclusion & Appendix
+
+This PRD establishes a complete, enterprise-grade product architecture that bridges customer service and network operations into a unified system.
+
+> **The ultimate strength of TelConnect is not simply that a chatbot can reply to a message. It is that the system understands the customer's problem, attempts grounded resolution, tracks live ticket states transparently, verifies satisfaction, and simultaneously analyzes complaint patterns across the network to detect, investigate, and proactively resolve mass outages.**
+
+---
+*TelConnect Engineering Team • Cognizant Hackathon (Use Case 13)*

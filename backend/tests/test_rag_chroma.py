@@ -11,6 +11,12 @@ from backend.app.services import rag
 @pytest.fixture(autouse=True)
 def setup_test_env():
     """Setup clean SQLite and ChromaDB test directories."""
+    old_db = os.environ.get("TCI_DB_PATH")
+    old_chroma = os.environ.get("CHROMA_DB_PATH")
+    old_coll = os.environ.get("CHROMA_COLLECTION_NAME")
+    old_model = os.environ.get("EMBEDDING_MODEL")
+    old_topk = os.environ.get("TOP_K")
+
     temp_dir = tempfile.mkdtemp()
     chroma_path = os.path.join(temp_dir, "chroma_test_db")
     db_path = os.path.join(temp_dir, "test.db")
@@ -39,6 +45,26 @@ def setup_test_env():
     rag._embedding_model = None
     rag._chroma_client = None
     shutil.rmtree(temp_dir, ignore_errors=True)
+    if old_db is not None:
+        os.environ["TCI_DB_PATH"] = old_db
+    else:
+        os.environ.pop("TCI_DB_PATH", None)
+    if old_chroma is not None:
+        os.environ["CHROMA_DB_PATH"] = old_chroma
+    else:
+        os.environ.pop("CHROMA_DB_PATH", None)
+    if old_coll is not None:
+        os.environ["CHROMA_COLLECTION_NAME"] = old_coll
+    else:
+        os.environ.pop("CHROMA_COLLECTION_NAME", None)
+    if old_model is not None:
+        os.environ["EMBEDDING_MODEL"] = old_model
+    else:
+        os.environ.pop("EMBEDDING_MODEL", None)
+    if old_topk is not None:
+        os.environ["TOP_K"] = old_topk
+    else:
+        os.environ.pop("TOP_K", None)
 
 
 def test_chroma_and_embedding_initialization():

@@ -22,13 +22,18 @@ logger = logging.getLogger(__name__)
 # Intent pattern matchers for admin inquiries
 INTENT_PATTERNS = [
     ("CATEGORY_REASONING", re.compile(r"why was this complaint classified|why (?:is|was) (?:this|the|it) complaint classified|why (?:is|was) (?:it|this) classified as|why classified as|explain (?:the )?category|category reasoning|classification reasoning|why is it categorized as|why was .* categorized", re.I)),
+    ("CATEGORY_BREAKDOWN", re.compile(r"top categor|category breakdown|categories|distribution of complaints|breakdown of complaint|complaints breakdown|most common issue", re.I)),
+    ("SPECIFIC_CATEGORY_COUNT", re.compile(r"(?:number of|count of|how many|total)\s+(?:internet|network|billing|broadband|service|device|fiber|voice|data|sim|recharge)\s+(?:complaint|ticket|categor|issue|case)", re.I)),
+    ("RECURRING_THEMES", re.compile(r"recurring|frequent|most common|repeated|top issue|common complaint|highest volume issue|repeated complaint", re.I)),
     ("IMMEDIATE_ATTENTION", re.compile(r"immediate|attention|critical|urgent|highest priority|p1|breach|deadline", re.I)),
     ("ESCALATION_RISK", re.compile(r"escalat|churn|trai|legal|court|ombudsman|porting|highest risk", re.I)),
-    ("CATEGORY_BREAKDOWN", re.compile(r"top categor|category breakdown|categories|distribution of complaints|most common issue", re.I)),
-    ("REGION_SPIKE", re.compile(r"increasing|spike|surge|region|density|why are complaints|hotspot|outage in|area", re.I)),
+    ("LEAST_COMPLAINTS_REGION", re.compile(r"(?:least|fewest|lowest|minimum|bottom|smallest)\s+(?:complaint|ticket|issue|volume)|region(?:s)?\s+with\s+(?:the\s+)?(?:least|fewest|lowest|minimum|bottom|smallest)|lowest\s+(?:complaint\s+)?region", re.I)),
+    ("REGIONAL_BREAKDOWN", re.compile(r"regional\s+breakdown|complaints\s+by\s+region|highest\s+(?:complaint\s+)?region|top\s+region|most\s+complaint\s+region|regions\s+with\s+most\s+complaints", re.I)),
+    ("REGION_SPIKE", re.compile(r"increasing|spike|surge|why are complaints increasing|outage in|outage status", re.I)),
     ("INCIDENT_STATUS", re.compile(r"incident status|current incident|active incident|open incident|incidents list", re.I)),
     ("ROOT_CAUSE", re.compile(r"root cause|why is this happening|cause of|underlying cause|evidence|investigat", re.I)),
     ("RECOMMENDED_ACTION", re.compile(r"what action|what should we do|recommend|how to resolve|sop|procedure|steps to take|troubleshoot", re.I)),
+    ("TOTAL_COMPLAINT_COUNT", re.compile(r"(?:how many|total|number of|count of)\s+(?:total\s+)?(?:complaint|ticket|case)s?(?:\s+(?:are\s+there|in\s+system|in\s+database))?$|how many open|how many closed|how many escalated", re.I)),
     ("SUMMARY", re.compile(r"summarize|summary|overview|briefing|today's complaint|daily report", re.I)),
 ]
 
@@ -38,17 +43,37 @@ def classify_admin_intent(text: str) -> str:
     for intent, pattern in INTENT_PATTERNS:
         if pattern.search(text):
             return intent
+    # If query specifically mentions a region with inquiry keywords
+    if _extract_region_mention(text):
+        return "SPECIFIC_REGION_QUERY"
     return "GENERAL_OPS"
 
 
 def _extract_region_mention(text: str) -> Optional[str]:
     """Check if query mentions any known region."""
     conn = db.connect()
-    regions = [r["region"] for r in conn.execute("SELECT DISTINCT region FROM complaints WHERE region IS NOT NULL").fetchall()]
+    regions = [r["region"] for r in conn.execute("SELECT DISTINCT region FROM complaints WHERE region IS NOT NULL").fetchall() if r["region"]]
     t_lower = text.lower()
+    t_clean = re.sub(r"[^\w\s]", " ", t_lower)
+
+    # 1. Exact or substring match of full region or comma-separated parts
     for reg in regions:
-        if reg and (reg.lower() in t_lower or any(part.strip().lower() in t_lower for part in reg.split(",") if len(part.strip()) > 3)):
+        reg_low = reg.lower()
+        if reg_low in t_lower or reg_low in t_clean:
             return reg
+        parts = [p.strip().lower() for p in reg.split(",") if len(p.strip()) > 3]
+        for part in parts:
+            if part in t_lower or part in t_clean:
+                return reg
+
+    # 2. Match multi-word region substrings (e.g. 'raj nagar' in 'raj nagar extention')
+    for reg in regions:
+        words = [w for w in re.split(r"[\s,]+", reg.lower()) if len(w) > 3]
+        if len(words) >= 2 and all(w in t_lower for w in words[:2]):
+            return reg
+        elif len(words) == 1 and words[0] in t_lower and len(words[0]) >= 5:
+            return reg
+
     return None
 
 
@@ -72,6 +97,19 @@ def get_admin_data_snapshot(query: str = "") -> dict:
     conn = db.connect()
     stats = analytics.resolution_stats({})
     categories = analytics.category_breakdown({})
+    recurring_themes_list = analytics.recurring_themes({}, top=10)
+
+    # Top recurring ticket summaries
+    recurring_summaries = db.rows_to_dicts(conn.execute(
+        "SELECT ticket_summary, COUNT(*) count FROM complaints WHERE ticket_summary IS NOT NULL "
+        "GROUP BY ticket_summary ORDER BY count DESC LIMIT 8"
+    ).fetchall())
+
+    # Service breakdown
+    services_breakdown = db.rows_to_dicts(conn.execute(
+        "SELECT COALESCE(service_type, 'other') service, COUNT(*) count "
+        "FROM complaints WHERE service_type IS NOT NULL GROUP BY service ORDER BY count DESC"
+    ).fetchall())
     
     # Top priority open complaints needing immediate attention
     immediate_tickets = db.rows_to_dicts(conn.execute(
@@ -91,17 +129,22 @@ def get_admin_data_snapshot(query: str = "") -> dict:
 
     # Active & recent incidents
     active_incidents = db.rows_to_dicts(conn.execute(
-    "SELECT incident_id, region, service_type, opened_at, complaint_count, spike_pct, "
-    "root_cause, confidence, evidence, status, admin_ack_status "
-    "FROM incidents "
-    "WHERE status != 'resolved' "
-    "ORDER BY opened_at DESC LIMIT 6"
+        "SELECT incident_id, region, service_type, opened_at, complaint_count, spike_pct, "
+        "root_cause, confidence, evidence, status, admin_ack_status "
+        "FROM incidents "
+        "WHERE status != 'resolved' "
+        "ORDER BY opened_at DESC LIMIT 6"
     ).fetchall())
 
-    # Region density & volume
+    # Region density & volume (Top and Lowest)
     regional_counts = db.rows_to_dicts(conn.execute(
-        "SELECT region, COUNT(*) count, SUM(status != 'closed') open_count "
-        "FROM complaints WHERE region IS NOT NULL GROUP BY region ORDER BY count DESC LIMIT 6"
+        "SELECT region, COUNT(*) count, SUM(status != 'closed') open_count, SUM(status = 'closed') closed_count "
+        "FROM complaints WHERE region IS NOT NULL GROUP BY region ORDER BY count DESC LIMIT 8"
+    ).fetchall())
+
+    regional_counts_lowest = db.rows_to_dicts(conn.execute(
+        "SELECT region, COUNT(*) count, SUM(status != 'closed') open_count, SUM(status = 'closed') closed_count "
+        "FROM complaints WHERE region IS NOT NULL GROUP BY region ORDER BY count ASC LIMIT 8"
     ).fetchall())
 
     # SLA breaches
@@ -116,15 +159,27 @@ def get_admin_data_snapshot(query: str = "") -> dict:
     region_match = _extract_region_mention(query)
     if region_match:
         reg_rows = conn.execute(
-            "SELECT COUNT(*) total, SUM(status != 'closed') open_count, AVG(escalation_risk) avg_risk "
+            "SELECT COUNT(*) total, SUM(status != 'closed') open_count, SUM(status = 'closed') closed_count, AVG(escalation_risk) avg_risk "
             "FROM complaints WHERE region=?", (region_match,)).fetchone()
         reg_inc = conn.execute(
             "SELECT * FROM incidents WHERE region=? ORDER BY opened_at DESC LIMIT 1", (region_match,)).fetchone()
+        reg_cats = db.rows_to_dicts(conn.execute(
+            "SELECT category, COUNT(*) count FROM complaints WHERE region=? GROUP BY category ORDER BY count DESC",
+            (region_match,)
+        ).fetchall())
+        reg_tickets = db.rows_to_dicts(conn.execute(
+            "SELECT complaint_id, ticket_summary, text, category, priority_label, status, timestamp "
+            "FROM complaints WHERE region=? ORDER BY timestamp DESC LIMIT 4",
+            (region_match,)
+        ).fetchall())
         target_info["region_details"] = {
             "region": region_match,
             "total_complaints": reg_rows["total"] if reg_rows else 0,
             "open_complaints": reg_rows["open_count"] if reg_rows else 0,
+            "closed_complaints": reg_rows["closed_count"] if reg_rows else 0,
             "avg_escalation_risk": round(reg_rows["avg_risk"] or 0, 2) if reg_rows else 0,
+            "top_categories": reg_cats,
+            "recent_tickets": reg_tickets,
             "incident": dict(reg_inc) if reg_inc else None
         }
 
@@ -140,13 +195,31 @@ def get_admin_data_snapshot(query: str = "") -> dict:
         if cmp_row:
             target_info["complaint_details"] = dict(cmp_row)
 
+    # Search matches for specific category / service keywords
+    q_low = query.lower()
+    for kw in ("network", "internet", "broadband", "billing", "service", "device", "fiber", "fibre", "sim", "recharge"):
+        if kw in q_low:
+            matched = db.rows_to_dicts(conn.execute(
+                "SELECT complaint_id, ticket_summary, text, category, service_type, region, priority_label, status "
+                "FROM complaints WHERE text LIKE ? OR ticket_summary LIKE ? OR category LIKE ? OR service_type LIKE ? "
+                "ORDER BY timestamp DESC LIMIT 5",
+                (f"%{kw}%", f"%{kw}%", f"%{kw}%", f"%{kw}%")
+            ).fetchall())
+            if matched:
+                target_info["category_matches"] = matched
+                break
+
     return {
         "stats": stats,
         "categories": categories,
+        "recurring_themes": recurring_themes_list,
+        "recurring_summaries": recurring_summaries,
+        "services_breakdown": services_breakdown,
         "immediate_tickets": immediate_tickets,
         "risk_tickets": risk_tickets,
         "active_incidents": active_incidents,
         "regional_counts": regional_counts,
+        "regional_counts_lowest": regional_counts_lowest,
         "sla_breaches": sla_breaches,
         "target_info": target_info,
     }
@@ -179,11 +252,28 @@ def _format_priority_factors(factors) -> str:
     return str(factors)
 
 
+TELECOM_CONCEPTS = {
+    "5g": "### 📡 5G (Fifth Generation Cellular Network)\n5G is the fifth generation mobile network technology providing ultra-low latency (<1ms), gigabit data speeds (up to 10 Gbps), and massive device connectivity. It uses mid-band, millimeter wave (mmWave), and sub-6 GHz spectrum to support technologies like network slicing, enhanced mobile broadband (eMBB), and IoT.",
+    "4g": "### 📡 4G LTE (Fourth Generation)\n4G LTE provides high-speed wireless mobile broadband with typical download speeds of 20–100 Mbps, low packet loss, and full IP-based network architecture for voice (VoLTE) and mobile data.",
+    "volte": "### 📞 VoLTE (Voice over LTE)\nVoLTE routes voice calls over the 4G LTE data network instead of legacy 2G/3G circuit-switched networks, enabling HD voice quality, faster call setup times, and simultaneous voice and 4G data usage.",
+    "vowifi": "### 📶 VoWiFi (Voice over Wi-Fi)\nVoWiFi allows placing and receiving standard phone calls and SMS over an existing Wi-Fi network connection when cellular network coverage or signal strength is weak indoors.",
+    "esim": "### 📱 eSIM (Embedded Subscriber Identity Module)\nAn eSIM is a digital SIM embedded directly into device hardware that allows activating a mobile network profile over the air (OTA) without needing a physical nano-SIM card.",
+    "apn": "### ⚙️ APN (Access Point Name)\nThe APN is the gateway identifier configured on a mobile device that defines the network path and IP settings required to connect to the carrier's mobile data network and internet.",
+    "roaming": "### 🌐 Telecom Roaming\nRoaming enables a mobile subscriber to use voice calls, SMS, and data services seamlessly while outside their home operator's primary network coverage area, either domestically or internationally.",
+    "sim": "### 💳 SIM Card (Subscriber Identity Module)\nA SIM card is an integrated circuit securely storing the international mobile subscriber identity (IMSI) number and related keys used to identify and authenticate subscribers on cellular telecommunication networks."
+}
+
+
 def generate_deterministic_fallback(query: str, intent: str, snapshot: dict, rag_docs: list[dict]) -> str:
     """Deterministic, factual response generator when Groq is unavailable.
     
     Guarantees zero downtime, 100% offline testability, and strict adherence to actual DB/RAG data.
     """
+    # Check if query is asking for definition/explanation of a standard telecom concept
+    q_low = query.lower()
+    for concept_key, concept_expl in TELECOM_CONCEPTS.items():
+        if re.search(rf"\b(what is|explain|define|meaning of)\s+(?:an?\s+)?{concept_key}\b", q_low) or re.search(rf"^\s*{concept_key}\??\s*$", q_low):
+            return concept_expl
     stats = snapshot.get("stats", {})
     total = stats.get("total", 0)
     open_c = stats.get("open", 0)
@@ -286,7 +376,87 @@ def generate_deterministic_fallback(query: str, intent: str, snapshot: dict, rag
         lines.append(f"\n**Primary Operational Focus:** `{top_cat}` represents the largest volume driver.")
         return "\n".join(lines)
 
-    # 4. Regional spike / why increasing / incidents
+    # 4a. Region with least complaints
+    if intent == "LEAST_COMPLAINTS_REGION":
+        lowest_regions = snapshot.get("regional_counts_lowest", [])
+        lines = [
+            "### 📍 Regions with Lowest / Fewest Complaints",
+            f"Analysis across all monitored areas in the database:\n"
+        ]
+        if lowest_regions:
+            least = lowest_regions[0]
+            lines.append(f"• **Region with Fewest Complaints:** **{least['region']}** with **{least['count']:,}** complaint(s) ({least.get('open_count', 0)} open).\n")
+            lines.append("**Bottom regions by complaint volume:**")
+            for idx, r in enumerate(lowest_regions[:6], 1):
+                lines.append(f"{idx}. **{r['region']}:** **{r['count']:,}** complaints ({r.get('open_count', 0)} open)")
+        else:
+            lines.append("No regional complaint records found.")
+        return "\n".join(lines)
+
+    # 4b. Specific region query (e.g. "how many complaints in raj nagar extension")
+    target_info = snapshot.get("target_info", {})
+    if intent == "SPECIFIC_REGION_QUERY" or (target_info.get("region_details") and any(w in query.lower() for w in ("how many", "count", "complaint", "ticket", "volume", "status", "in ", "for ", "at "))):
+        reg_info = target_info.get("region_details", {})
+        if reg_info:
+            reg_name = reg_info["region"]
+            tot = reg_info["total_complaints"]
+            op = reg_info["open_complaints"]
+            cl = reg_info.get("closed_complaints", tot - op)
+            inc = reg_info.get("incident")
+
+            lines = [
+                f"### 📍 Complaint Volume for {reg_name}",
+                f"• **Total Complaints in {reg_name}:** **{tot:,}** ({op} open, {cl} closed)",
+                f"• **Average Escalation Risk:** {round(reg_info.get('avg_escalation_risk', 0) * 100)}%",
+            ]
+            if inc:
+                lines.append(f"• **Active Incident:** 🔴 Incident `{inc.get('incident_id')}` ({inc.get('status')}) — *{inc.get('root_cause') or 'Under investigation'}*")
+            else:
+                lines.append("• **Incident Status:** 🟢 No active incidents detected in this area.")
+
+            if reg_info.get("top_categories"):
+                top_cats_str = ", ".join(f"{c['category'].capitalize()}: {c['count']}" for c in reg_info["top_categories"][:3])
+                lines.append(f"• **Top Categories in {reg_name}:** {top_cats_str}")
+
+            if reg_info.get("recent_tickets"):
+                lines.append(f"\n**Recent Tickets in {reg_name}:**")
+                for t in reg_info["recent_tickets"][:3]:
+                    p_label = t.get("priority_label", "P2")
+                    lines.append(f"• **[{t.get('complaint_id')}]** ({p_label}) — {t.get('ticket_summary') or t.get('text', '')[:90]}")
+
+            return "\n".join(lines)
+
+    # 4c. Regional breakdown / top regions
+    if intent == "REGIONAL_BREAKDOWN":
+        top_regions = snapshot.get("regional_counts", [])
+        lines = [
+            "### 🗺️ Regional Complaint Distribution",
+            f"Breakdown of complaint volume across top monitored regions:\n"
+        ]
+        if top_regions:
+            lines.append(f"• **Highest Complaint Region:** **{top_regions[0]['region']}** with **{top_regions[0]['count']:,}** complaints.\n")
+            lines.append("**Top Regions by Volume:**")
+            for idx, r in enumerate(top_regions[:6], 1):
+                pct = round((r['count'] / total) * 100, 1) if total > 0 else 0
+                lines.append(f"{idx}. **{r['region']}:** **{r['count']:,}** ({pct}%) — {r.get('open_count', 0)} open")
+        else:
+            lines.append("No regional data available.")
+        return "\n".join(lines)
+
+    # 4d. Total complaints count
+    if intent == "TOTAL_COMPLAINT_COUNT":
+        lines = [
+            "### 📊 Overall Complaint Metrics",
+            f"• **Total Complaints Ingested:** **{total:,}**",
+            f"• **Open Complaints:** **{open_c:,}**",
+            f"• **In Progress:** **{in_prog:,}**",
+            f"• **Escalated:** **{escalated_c:,}**",
+            f"• **Closed / Resolved:** **{stats.get('closed', 0):,}** ({round(stats.get('resolution_rate', 0) * 100)}% resolution rate)",
+            f"• **SLA Breaches:** **{sla_b:,}** pending tickets",
+        ]
+        return "\n".join(lines)
+
+    # 4e. Regional spike / why increasing / incidents
     if intent in ("REGION_SPIKE", "INCIDENT_STATUS", "ROOT_CAUSE"):
         lines = [
             "### 📡 Active Incidents & Root-Cause Intelligence",
@@ -345,7 +515,61 @@ def generate_deterministic_fallback(query: str, intent: str, snapshot: dict, rag
 
         return "\n".join(lines)
 
-    # 6. Default / Summary
+    # 6. Recurring complaint themes
+    if intent == "RECURRING_THEMES":
+        lines = [
+            "### 🔁 Top Recurring Complaint Themes",
+            f"Analysis across **{total:,} complaints** in the platform:\n"
+        ]
+        themes = snapshot.get("recurring_themes", [])
+        if themes:
+            for idx, th in enumerate(themes[:8], 1):
+                cnt = th.get("count", 0)
+                pct = round((cnt / total) * 100, 1) if total > 0 else 0
+                theme_name = th.get("theme", "").title()
+                lines.append(f"{idx}. **{theme_name}:** **{cnt:,}** occurrences ({pct}%)")
+        else:
+            lines.append("No recurring complaint themes identified yet.")
+
+        summaries = snapshot.get("recurring_summaries", [])
+        if summaries:
+            lines.append("\n**Most Common Ticket Summaries:**")
+            for s in summaries[:4]:
+                lines.append(f"• \"{s.get('ticket_summary')}\" — **{s.get('count')}** tickets")
+        return "\n".join(lines)
+
+    # 7. Specific category complaint count
+    if intent == "SPECIFIC_CATEGORY_COUNT":
+        target = "network"
+        q_low = query.lower()
+        if "bill" in q_low or "payment" in q_low or "recharge" in q_low:
+            target = "billing"
+        elif "device" in q_low or "router" in q_low or "modem" in q_low:
+            target = "device"
+        elif "service" in q_low or "install" in q_low:
+            target = "service"
+        elif "internet" in q_low or "network" in q_low or "broadband" in q_low or "wifi" in q_low or "fiber" in q_low or "data" in q_low:
+            target = "network"
+
+        cat_match = next((c for c in categories if str(c.get("category", "")).lower() == target), None)
+        cnt = cat_match.get("count", 0) if cat_match else 0
+        pct = round((cnt / total) * 100, 1) if total > 0 else 0
+
+        lines = [
+            f"### 📊 Complaints in '{target.capitalize()}' Category",
+            f"• **Total {target.capitalize()} Complaints:** **{cnt:,}** out of {total:,} ({pct}% of all complaints)\n"
+        ]
+
+        target_info = snapshot.get("target_info", {})
+        if target_info.get("category_matches"):
+            lines.append(f"**Recent {target.capitalize()} Tickets:**")
+            for t in target_info["category_matches"][:4]:
+                p_label = t.get("priority_label", "P2")
+                lines.append(f"• **[{t.get('complaint_id')}]** ({p_label}) — {t.get('ticket_summary') or t.get('text', '')[:90]}")
+
+        return "\n".join(lines)
+
+    # 8. Default / Summary
     lines = [
         "### 📋 Operations Summary & System Status",
         f"Platform is actively monitoring **{total:,} complaints** across all regions.\n",

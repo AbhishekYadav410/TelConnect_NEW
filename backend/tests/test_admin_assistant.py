@@ -18,6 +18,7 @@ client = TestClient(app)
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_test_db():
+    old_db = os.environ.get("TCI_DB_PATH")
     temp_dir = tempfile.mkdtemp()
     db_path = os.path.join(temp_dir, "test_admin.db")
     os.environ["TCI_DB_PATH"] = db_path
@@ -46,6 +47,10 @@ def setup_test_db():
     )
     conn.commit()
     yield
+    if old_db is not None:
+        os.environ["TCI_DB_PATH"] = old_db
+    else:
+        os.environ.pop("TCI_DB_PATH", None)
     import shutil
     shutil.rmtree(temp_dir, ignore_errors=True)
 
