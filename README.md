@@ -85,8 +85,7 @@ flowchart TB
 
 - **40/60 Modern Split Layout**: Conversational stream on the right paired with contextual user profile, quick action pills (*Speed Test*, *Internet Down*, *My Ticket*, *Billing*), and personal ticket tracker drawer on the left.
 - **Multilingual Intelligence**: Native support for **English**, **Hindi (हिन्दी Devanagari)**, and **Hinglish** transliteration, tokenized via **Hugging Face Multilingual DistilBERT** with Groq zero-shot neural translation and domain lexical fallbacks.
-- **Multimodal Voice Input & Output**:
-  - **Groq Whisper STT**: Fast multilingual voice transcription supporting English and Hindi voice inputs.
+- **Multimodal Voice Output**:
   - **Web Speech API TTS**: Audio readouts with natural bilingual voice synthesis.
 - **Dynamic Network & Line Diagnostics**: On-demand telemetry tests (download speed, upload speed, ping latency, jitter, packet loss, line health status) rendered as interactive cards in the chat stream.
 - **Intelligent Complaint Interception**:
