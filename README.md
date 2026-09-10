@@ -169,10 +169,10 @@ $$\text{PriorityScore} = \text{clamp}\Big(0, 100, \, w_1 \cdot U + w_2 \cdot S +
 
 | Priority Band | Score Range | SLA Deadline | Automated Operational Action |
 | :---: | :---: | :---: | :--- |
-| **P1 — Critical** | $80 - 100$ | **2 Hours** | High-priority admin alert; immediate queue banner |
-| **P2 — High** | $60 - 79$ | **6 Hours** | Routed to Tier-2 specialist queue |
+| **P1 — Critical** | $80 - 100$ | **4 Hours** | High-priority admin alert; immediate queue banner |
+| **P2 — High** | $60 - 79$ | **8 Hours** | Routed to Tier-2 specialist queue |
 | **P3 — Medium** | $35 - 59$ | **24 Hours** | Standard operational queue |
-| **P4 — Low** | $0 - 34$ | **48 Hours** | General queue |
+| **P4 — Low** | $0 - 34$ | **72 Hours** | General queue |
 
 ---
 
